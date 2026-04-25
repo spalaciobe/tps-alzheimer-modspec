@@ -9,8 +9,17 @@ Proyecto del curso *Tópicos en Procesamiento Digital de Señales* (UNAL Medell�
 
 ## Setup
 
+### Opción A — venv + pip (sin conda)
+
 ```bash
-# 1. Crear entorno
+python -m venv .venv
+source .venv/Scripts/activate          # Windows bash
+pip install -r requirements.txt
+```
+
+### Opción B — mamba/conda
+
+```bash
 mamba env create -f environment.yml
 mamba activate tps-alzheimer
 
