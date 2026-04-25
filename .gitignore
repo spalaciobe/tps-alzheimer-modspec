@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Virtual envs
+.venv/
+venv/
+env/
+.conda/
+
+# Data — gigabytes, no entran al repo
+data/raw/
+data/derivatives/
+
+# Resultados pesados
+results/checkpoints/
+results/figures_high_res/
+*.pth
+*.pt
+*.h5
+*.hdf5
+*.npz
+*.fif
+
+# Notebooks: outputs limpios
+*.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Latex temp (por si compila localmente)
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz

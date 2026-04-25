@@ -1,0 +1,9 @@
+method: cwt
+target_shape: [45, 45]
+carrier_range_hz: [0.5, 45.0]
+mod_range_hz: [0.0, 22.5]
+wavelet: cmor1.5-1.0        # Morlet compleja (B=1.5, C=1.0)
+n_scales: 50
+scale_spacing: log
+log_power: true
+eps: 1.0e-10

@@ -1,0 +1,25 @@
+model:
+  in_channels: 19
+  conv_filters: [32, 64]
+  kernel_size: 3
+  conv_dropout: 0.85
+  fc_units: [128, 64]
+  fc_dropout: 0.85
+  fc_activation: leaky_relu
+  fc_negative_slope: 0.1
+  num_classes: 2
+
+train:
+  optimizer: nadam
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-2       # ≈ L2=1e-2 del paper
+  batch_size: 4
+  epochs: 50
+  early_stopping_patience: 10
+  early_stopping_metric: f1_macro
+  loss: cross_entropy
+  use_class_weights: true
+  scheduler: null            # paper no usa scheduler
+
+aggregation:
+  epoch_to_subject: mean_softmax   # alternativa: majority_vote

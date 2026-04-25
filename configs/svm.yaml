@@ -1,0 +1,23 @@
+saliency:
+  method_main: gradcam       # ablation: vanilla
+  target_layer: conv2        # última conv del Block 2
+  aggregate: mean_correct    # promedio sobre epochs train clasificadas correctamente
+
+clustering:
+  thresholds_pct: [80, 82, 84, 86, 88, 90, 92, 94, 96]
+  k_clusters: [3, 4, 5]
+  algorithm: kmeans
+  random_state: 0
+
+features:
+  per_channel: true
+  include_ratios: true
+  selection: anova_f
+  top_k: 24
+
+svm:
+  kernel: rbf
+  C: 1.0
+  gamma: auto_inv_features   # 1 / n_features = 1/24
+  scaler: minmax
+  scaler_range: [-1, 1]

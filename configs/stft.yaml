@@ -1,0 +1,11 @@
+method: stft
+target_shape: [45, 45]      # (F_carrier, F_mod) bins
+carrier_range_hz: [0.5, 45.0]
+mod_range_hz: [0.0, 22.5]
+window: hann
+nperseg_at_200hz: 128
+noverlap_at_200hz: 64
+nperseg_at_500hz: 320
+noverlap_at_500hz: 160
+log_power: true             # 10*log10(|X|^2 + eps)
+eps: 1.0e-10

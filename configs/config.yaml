@@ -1,0 +1,57 @@
+# Configuración global del proyecto
+paths:
+  raw: data/raw/ds004504
+  preproc_paper: data/derivatives/preprocessed_paper
+  preproc_dataset: data/derivatives/preprocessed_dataset
+  epochs: data/derivatives/epochs
+  modspec_root: data/derivatives
+  saliency: data/derivatives/saliency
+  results: results
+
+dataset:
+  name: ds004504
+  groups_keep: [A, C]      # AD y Control. F (FTD) excluido del binario principal.
+  channels_19_1020:
+    - Fp1
+    - Fp2
+    - F7
+    - F3
+    - Fz
+    - F4
+    - F8
+    - T3
+    - C3
+    - Cz
+    - C4
+    - T4
+    - T5
+    - P3
+    - Pz
+    - P4
+    - T6
+    - O1
+    - O2
+
+preprocess:
+  band_low_hz: 0.5
+  band_high_hz: 45.0
+  notch_hz: 50.0
+  resample_hz: 200          # principal; ablation a 500
+  ica_method: infomax
+  ica_n_components: 0.99
+  iclabel_threshold: 0.8
+  iclabel_reject:
+    - eye blink
+    - muscle artifact
+    - heart beat
+    - line noise
+    - channel noise
+
+epoching:
+  duration_s: 8.0
+  overlap_s: 7.0            # paso = 1 s ⇒ "8 s con 1 s overlap" del paper
+  drop_last_s: 7.0
+  min_epochs_per_subject: 460
+
+reproducibility:
+  seeds: [0, 1, 2, 3, 4]
