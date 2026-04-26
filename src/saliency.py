@@ -1,4 +1,11 @@
-"""Saliency: Grad-CAM (principal) y vanilla gradient (ablation, fiel a Lopes)."""
+"""Saliency: Grad-CAM (principal) y vanilla gradient (ablation, fiel a Lopes).
+
+Métodos implementados:
+- Grad-CAM (Selvaraju et al. 2017): "Grad-CAM: Visual Explanations from Deep
+  Networks via Gradient-based Localization", ICCV. Implementado vía `pytorch-grad-cam`.
+- Vanilla gradient (Simonyan et al. 2014): "Deep Inside Convolutional Networks:
+  Visualising Image Classification Models and Saliency Maps", arXiv. Implementado vía `captum`.
+"""
 
 from __future__ import annotations
 

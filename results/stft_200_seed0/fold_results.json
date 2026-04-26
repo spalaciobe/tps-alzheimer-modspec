@@ -1,0 +1,100 @@
+[
+  {
+    "fold": 0,
+    "test_subject": "sub-001",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5255001187324524,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "train_seconds": 260.1
+  },
+  {
+    "fold": 1,
+    "test_subject": "sub-002",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5027229189872742,
+    "epoch_metrics": {
+      "accuracy": 0.5430038510911425,
+      "f1_macro": 0.3519134775374376,
+      "sensitivity": 0.5430038510911425,
+      "specificity": 0.0
+    },
+    "train_seconds": 113.9
+  },
+  {
+    "fold": 2,
+    "test_subject": "sub-003",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5023636817932129,
+    "epoch_metrics": {
+      "accuracy": 0.8327645051194539,
+      "f1_macro": 0.4543761638733706,
+      "sensitivity": 0.8327645051194539,
+      "specificity": 0.0
+    },
+    "train_seconds": 210.5
+  },
+  {
+    "fold": 3,
+    "test_subject": "sub-004",
+    "true": 1,
+    "pred": 1,
+    "score": 0.9584528207778931,
+    "epoch_metrics": {
+      "accuracy": 0.9754689754689755,
+      "f1_macro": 0.493791088385683,
+      "sensitivity": 0.9754689754689755,
+      "specificity": 0.0
+    },
+    "train_seconds": 478.6
+  },
+  {
+    "fold": 4,
+    "test_subject": "sub-005",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5156601071357727,
+    "epoch_metrics": {
+      "accuracy": 0.979746835443038,
+      "f1_macro": 0.4948849104859335,
+      "sensitivity": 0.979746835443038,
+      "specificity": 0.0
+    },
+    "train_seconds": 131.9
+  },
+  {
+    "fold": 5,
+    "test_subject": "sub-006",
+    "true": 1,
+    "pred": 0,
+    "score": 0.4879738688468933,
+    "epoch_metrics": {
+      "accuracy": 0.0,
+      "f1_macro": 0.0,
+      "sensitivity": 0.0,
+      "specificity": 0.0
+    },
+    "train_seconds": 144.4
+  },
+  {
+    "fold": 6,
+    "test_subject": "sub-007",
+    "true": 1,
+    "pred": 1,
+    "score": 0.9630979895591736,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "train_seconds": 506.5
+  }
+]

@@ -22,6 +22,7 @@ from src.feature_extraction import (
 )
 from src.svm_pipeline import fit_svm_pipeline
 from src.utils.logging import get_logger
+from src.utils.seed import set_seed
 
 
 def features_for_h5(p: Path, patches: list[Patch], n_subsample: int | None,
@@ -48,6 +49,7 @@ def main() -> None:
     parser.add_argument("--epochs-per-subject", type=int, default=80,
                         help="Subsample por sujeto para acelerar SVM RBF (O(n²)).")
     args = parser.parse_args()
+    set_seed(args.seed)
     logger = get_logger("svm")
 
     cfg = yaml.safe_load(open(args.config))

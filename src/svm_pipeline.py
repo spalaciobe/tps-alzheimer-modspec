@@ -14,6 +14,9 @@ def make_svm(n_features: int, C: float = 1.0) -> SVC:
 def fit_svm_pipeline(
     X_train: np.ndarray, y_train: np.ndarray, C: float = 1.0
 ) -> tuple[MinMaxScaler, SVC]:
+    """Anti-leakage: el scaler SE AJUSTA SOLO con X_train. Para predecir,
+    aplicar `scaler.transform(X_test)` con el scaler devuelto — NUNCA reajustar.
+    """
     scaler = MinMaxScaler(feature_range=(-1, 1)).fit(X_train)
     X_s = scaler.transform(X_train)
     clf = make_svm(n_features=X_s.shape[1], C=C)

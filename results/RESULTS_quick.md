@@ -2,6 +2,13 @@
 
 Pipeline end-to-end completado en una sesión sobre RTX 3050 Laptop (CUDA 12.4).
 
+## ⚠️ Desviaciones respecto al paper original
+
+- **Saliency**: Grad-CAM (este proyecto) en lugar de vanilla gradient (paper). No comparable visualmente con figuras del paper. Pipeline de vanilla saliency disponible como ablation.
+- **batch_size**: 32 (quick) o 128 (full GPU) en lugar de 4 (paper). Justificado por GPU + AMP + class weights; F1 macro estable bajo este cambio.
+- **Patches threshold/K**: actualmente fijos (88%, K=4) en lugar de grid search por fold (paper). Marcado como crítica en `docs/AUDIT.md`; corregir antes de publicación.
+- **Saliency aggregation across folds**: actualmente global; refactor a per-fold pendiente para eliminar leakage indirecto.
+
 ## Configuración
 
 - **Dataset**: OpenNeuro ds004504, 65 sujetos (36 AD + 29 HC), fs=500 Hz → resampleado a 200 Hz.

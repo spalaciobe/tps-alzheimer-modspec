@@ -2,6 +2,20 @@
 
 Proyecto del curso *Tópicos en Procesamiento Digital de Señales* (UNAL Medellín, prof. Freddy Bolaños).
 
+## ⚠️ Disclaimer clínico
+
+Este proyecto es una **replicación académica de investigación** sobre el dataset público OpenNeuro ds004504. Los modelos entrenados son **únicamente** para validación metodológica y reproducibilidad de Lopes et al. (2023).
+
+**No están aprobados para uso clínico directo. No realizan diagnósticos médicos válidos.** Cualquier aplicación clínica requiere validación en cohortes externas, aprobación regulatoria (FDA/EMA/INVIMA), consentimiento informado y supervisión médica cualificada.
+
+## 🤖 Uso de IA generativa
+
+La generación inicial de código, configuración del pipeline, debugging de leakage en LOSO-CV y auditoría metodológica fueron asistidos por **Claude Code (Anthropic, 2026)**. Todo el código fue revisado, ejecutado y validado por el autor antes del commit.
+
+## 📜 Licencia
+
+Código bajo **MIT License** (ver [`LICENSE`](LICENSE)). Dataset OpenNeuro ds004504 bajo **CC0 1.0 Universal**.
+
 ## Objetivo
 
 1. **Replicar** el pipeline de Lopes et al. 2023 (*"Using CNN Saliency Maps and EEG Modulation Spectra for Improved and More Interpretable ML-Based Alzheimer's Disease Diagnosis"*, IEEE TNSRE) sobre el dataset público **OpenNeuro ds004504** (Miltiadous et al. 2023) en clasificación binaria AD vs HC.

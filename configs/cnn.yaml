@@ -13,7 +13,7 @@ train:
   optimizer: nadam
   learning_rate: 1.0e-4
   weight_decay: 1.0e-2       # ≈ L2=1e-2 del paper
-  batch_size: 64             # paper usa 4; con GPU subimos a 64 (validado, F1 igual o mejor)
+  batch_size: 128            # paper usa 4; con GPU + AMP subimos a 128 (RTX 3050 4GB OK)
   epochs: 50
   early_stopping_patience: 10
   early_stopping_metric: f1_macro
