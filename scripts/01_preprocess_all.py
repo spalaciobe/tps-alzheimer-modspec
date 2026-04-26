@@ -28,6 +28,8 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--limit", type=int, default=None,
                         help="Procesar solo los primeros N sujetos (debug)")
+    parser.add_argument("--run-tag", default="",
+                        help="Sufijo de directorio para correr en paralelo (ej. 'v2')")
     args = parser.parse_args()
     set_seed(args.seed)
     logger = get_logger("preprocess")
@@ -37,6 +39,8 @@ def main() -> None:
     pp = cfg_dict["preprocess"]
 
     out_dir = Path(paths["preproc_paper" if args.version == "paper" else "preproc_dataset"])
+    if args.run_tag:
+        out_dir = out_dir.parent / f"{out_dir.name}_{args.run_tag}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     cfg = PreprocessConfig(

@@ -52,6 +52,8 @@ def main() -> None:
     parser.add_argument("--version", choices=["paper", "dataset"], default="paper")
     parser.add_argument("--config", type=Path, default=Path("configs/config.yaml"))
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--run-tag", default="",
+                        help="Sufijo de directorio para correr en paralelo (ej. 'v2')")
     args = parser.parse_args()
     logger = get_logger("modspec")
 
@@ -60,7 +62,12 @@ def main() -> None:
     eps_cfg = cfg_dict["epoching"]
 
     preproc_dir = Path(paths["preproc_paper" if args.version == "paper" else "preproc_dataset"])
-    out_dir = Path(paths["modspec_root"]) / f"modspec_{args.method}_{args.fs}"
+    if args.run_tag:
+        preproc_dir = preproc_dir.parent / f"{preproc_dir.name}_{args.run_tag}"
+    out_name = f"modspec_{args.method}_{args.fs}"
+    if args.run_tag:
+        out_name += f"_{args.run_tag}"
+    out_dir = Path(paths["modspec_root"]) / out_name
     out_dir.mkdir(parents=True, exist_ok=True)
 
     ms_cfg = build_modspec_config(args.method, args.fs, Path("configs"))

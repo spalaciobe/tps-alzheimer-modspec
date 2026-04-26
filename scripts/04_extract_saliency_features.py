@@ -90,6 +90,7 @@ def main() -> None:
                         help="Subset de train para acelerar saliency (None = todos)")
     parser.add_argument("--grid-search", action="store_true",
                         help="Activar grid search real de patches por fold")
+    parser.add_argument("--run-tag", default="")
     args = parser.parse_args()
     set_seed(args.seed)
     logger = get_logger("saliency")
@@ -100,10 +101,12 @@ def main() -> None:
     paths = cfg["paths"]
     suffix = "_quick" if args.quick else ""
     sal_tag = f"_{args.saliency_method}" if args.saliency_method != "gradcam" else ""
-    run_id = f"{args.method}_{args.fs}_seed{args.seed}{suffix}{sal_tag}"
+    rt = f"_{args.run_tag}" if args.run_tag else ""
+    run_id = f"{args.method}_{args.fs}_seed{args.seed}{suffix}{sal_tag}{rt}"
 
-    modspec_dir = Path(paths["modspec_root"]) / f"modspec_{args.method}_{args.fs}"
-    results_dir = Path(paths["results"]) / f"{args.method}_{args.fs}_seed{args.seed}{suffix}"
+    ms_name = f"modspec_{args.method}_{args.fs}{rt}"
+    modspec_dir = Path(paths["modspec_root"]) / ms_name
+    results_dir = Path(paths["results"]) / f"{args.method}_{args.fs}_seed{args.seed}{suffix}{rt}"
     sal_dir = Path(paths["saliency"]) / run_id
     sal_dir.mkdir(parents=True, exist_ok=True)
     (sal_dir / "per_fold").mkdir(exist_ok=True)

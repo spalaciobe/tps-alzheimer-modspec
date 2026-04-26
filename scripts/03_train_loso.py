@@ -36,6 +36,8 @@ def main() -> None:
     parser.add_argument("--max-folds", type=int, default=None)
     parser.add_argument("--quick", action="store_true",
                         help="Perfil acelerado (batch=32, epochs=10, subsample=100)")
+    parser.add_argument("--run-tag", default="",
+                        help="Sufijo (ej. 'v2') para directorios paralelos")
     args = parser.parse_args()
     set_seed(args.seed)
     logger = get_logger("train_loso")
@@ -44,7 +46,10 @@ def main() -> None:
     cnn_cfg = yaml.safe_load(open(args.cnn_config))
     paths = cfg["paths"]
 
-    modspec_dir = Path(paths["modspec_root"]) / f"modspec_{args.method}_{args.fs}"
+    ms_name = f"modspec_{args.method}_{args.fs}"
+    if args.run_tag:
+        ms_name += f"_{args.run_tag}"
+    modspec_dir = Path(paths["modspec_root"]) / ms_name
     h5_paths = sorted(modspec_dir.glob("*.h5"))
     if not h5_paths:
         raise SystemExit(f"No hay HDF5 en {modspec_dir}; corre 02_compute_modspec.py")
@@ -75,11 +80,24 @@ def main() -> None:
         splits = splits[: args.max_folds]
 
     suffix = "_quick" if args.quick else ""
-    results_dir = Path(paths["results"]) / f"{args.method}_{args.fs}_seed{args.seed}{suffix}"
+    tag = f"_{args.run_tag}" if args.run_tag else ""
+    results_dir = Path(paths["results"]) / f"{args.method}_{args.fs}_seed{args.seed}{suffix}{tag}"
     results_dir.mkdir(parents=True, exist_ok=True)
 
+    # Resume: cargar fold_results.json existente y saltar folds con .pt presentes
+    fold_results_path = results_dir / "fold_results.json"
     fold_results = []
+    if fold_results_path.exists():
+        try:
+            fold_results = json.loads(fold_results_path.read_text())
+            logger.info(f"Resume: {len(fold_results)} folds previos cargados de {fold_results_path}")
+        except Exception:
+            fold_results = []
+    done_subjects = {r["test_subject"] for r in fold_results}
+
     for fold_idx, (test_path, train_paths) in enumerate(tqdm(splits, desc="LOSO")):
+        if test_path.stem in done_subjects:
+            continue
         train_paths_only, val_paths = hold_out_val(
             train_paths, bank.subject_to_label, args.seed + fold_idx
         )

@@ -52,6 +52,7 @@ def main() -> None:
                         help="Usar patch_masks_fold_NN.npy (anti-leakage). "
                              "Si no, usa patch_masks.npy global (compat).")
     parser.add_argument("--saliency-method", choices=["gradcam", "vanilla"], default="gradcam")
+    parser.add_argument("--run-tag", default="")
     args = parser.parse_args()
     set_seed(args.seed)
     logger = get_logger("svm")
@@ -61,9 +62,10 @@ def main() -> None:
     paths = cfg["paths"]
     suffix = "_quick" if args.quick else ""
     sal_tag = f"_{args.saliency_method}" if args.saliency_method != "gradcam" else ""
+    rt = f"_{args.run_tag}" if args.run_tag else ""
 
-    modspec_dir = Path(paths["modspec_root"]) / f"modspec_{args.method}_{args.fs}"
-    sal_dir = Path(paths["saliency"]) / f"{args.method}_{args.fs}_seed{args.seed}{suffix}{sal_tag}"
+    modspec_dir = Path(paths["modspec_root"]) / f"modspec_{args.method}_{args.fs}{rt}"
+    sal_dir = Path(paths["saliency"]) / f"{args.method}_{args.fs}_seed{args.seed}{suffix}{sal_tag}{rt}"
 
     h5_paths = sorted(modspec_dir.glob("*.h5"))
     sid_to_idx = {p.stem: i for i, p in enumerate(h5_paths)}
@@ -136,7 +138,7 @@ def main() -> None:
         })
 
     pf_tag = "_perfold" if use_per_fold else ""
-    out_dir = Path(paths["results"]) / f"svm_{args.method}_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf_tag}"
+    out_dir = Path(paths["results"]) / f"svm_{args.method}_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf_tag}{rt}"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "fold_results.json").write_text(json.dumps(fold_results, indent=2))
 
