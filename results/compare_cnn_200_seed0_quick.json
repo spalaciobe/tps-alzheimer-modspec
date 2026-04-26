@@ -1,0 +1,33 @@
+{
+  "n_subjects": 65,
+  "classifier": "cnn",
+  "fs": 200,
+  "stft": {
+    "accuracy": 0.5538461538461539,
+    "ci95": [
+      0.4307692307692308,
+      0.6615384615384615
+    ]
+  },
+  "cwt": {
+    "accuracy": 0.5384615384615384,
+    "ci95": [
+      0.4153846153846154,
+      0.6615384615384615
+    ]
+  },
+  "wilcoxon_score": {
+    "statistic": 913.0,
+    "pvalue": 0.2972622935787437,
+    "rank_biserial": -0.12928416535219422,
+    "median_diff": 0.0051659345626831055,
+    "n_paired": 65
+  },
+  "wilcoxon_correct": {
+    "statistic": 240.0,
+    "pvalue": 0.8574624419592412,
+    "rank_biserial": -0.02815714712722483,
+    "median_diff": 0.0,
+    "n_paired": 31
+  }
+}

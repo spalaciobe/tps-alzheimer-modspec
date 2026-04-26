@@ -53,3 +53,16 @@ python scripts/06_compare_stft_cwt.py
 ## Plan completo
 
 Ver [`docs/plan.md`](docs/plan.md).
+
+## Resultados (quick mode, 2026-04-25)
+
+Ver [`results/RESULTS_quick.md`](results/RESULTS_quick.md). Pipeline end-to-end validado:
+
+- **SVM con patches saliency-guided**:
+  - STFT: Acc 0.77, AUC 0.85
+  - CWT:  Acc 0.69, AUC 0.74
+  - Wilcoxon STFT vs CWT: p = 0.34 (no significativo)
+
+- **CNN end-to-end** (sub-entrenado en quick mode): cerca de azar.
+
+Para el run completo (epochs=50 sin subsample), usar Colab T4 — ver [`docs/optimization_options.md`](docs/optimization_options.md).

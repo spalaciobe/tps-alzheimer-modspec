@@ -24,6 +24,7 @@ class TrainConfig:
     early_stopping_patience: int = 10
     use_class_weights: bool = True
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
+    amp: bool = True  # Mixed precision en GPU Ampere (RTX 3050+)
 
 
 def _class_weights_from_labels(y: np.ndarray, n_classes: int = 2) -> torch.Tensor:
@@ -52,6 +53,9 @@ def train_cnn(
 
     optim = NAdam(model.parameters(), lr=cfg.learning_rate, weight_decay=cfg.weight_decay)
 
+    use_amp = cfg.amp and device.type == "cuda"
+    scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
+
     best_f1 = -1.0
     best_state: dict | None = None
     epochs_no_improve = 0
@@ -63,13 +67,15 @@ def train_cnn(
         n = 0
         for batch in train_loader:
             x, y, _ = batch
-            x = x.to(device)
-            y = y.to(device)
-            optim.zero_grad()
-            logits = model(x)
-            loss = criterion(logits, y)
-            loss.backward()
-            optim.step()
+            x = x.to(device, non_blocking=True)
+            y = y.to(device, non_blocking=True)
+            optim.zero_grad(set_to_none=True)
+            with torch.amp.autocast("cuda", dtype=torch.float16, enabled=use_amp):
+                logits = model(x)
+                loss = criterion(logits, y)
+            scaler.scale(loss).backward()
+            scaler.step(optim)
+            scaler.update()
             running += loss.item() * x.size(0)
             n += x.size(0)
         train_loss = running / max(n, 1)
