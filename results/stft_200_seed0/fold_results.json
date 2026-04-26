@@ -96,5 +96,103 @@
       "specificity": 0.0
     },
     "train_seconds": 506.5
+  },
+  {
+    "fold": 7,
+    "test_subject": "sub-008",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5370432138442993,
+    "epoch_metrics": {
+      "accuracy": 0.9401273885350319,
+      "f1_macro": 0.48456992777413,
+      "sensitivity": 0.9401273885350319,
+      "specificity": 0.0
+    },
+    "train_seconds": 115.8
+  },
+  {
+    "fold": 8,
+    "test_subject": "sub-009",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5250822305679321,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "train_seconds": 76.1
+  },
+  {
+    "fold": 9,
+    "test_subject": "sub-010",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5164137482643127,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "train_seconds": 88.4
+  },
+  {
+    "fold": 10,
+    "test_subject": "sub-011",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5419257879257202,
+    "epoch_metrics": {
+      "accuracy": 0.8414795244385733,
+      "f1_macro": 0.4569583931133429,
+      "sensitivity": 0.8414795244385733,
+      "specificity": 0.0
+    },
+    "train_seconds": 72.2
+  },
+  {
+    "fold": 11,
+    "test_subject": "sub-012",
+    "true": 1,
+    "pred": 0,
+    "score": 0.46609577536582947,
+    "epoch_metrics": {
+      "accuracy": 0.16855203619909503,
+      "f1_macro": 0.1442400774443369,
+      "sensitivity": 0.16855203619909503,
+      "specificity": 0.0
+    },
+    "train_seconds": 83.3
+  },
+  {
+    "fold": 12,
+    "test_subject": "sub-013",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5495870113372803,
+    "epoch_metrics": {
+      "accuracy": 0.9878934624697336,
+      "f1_macro": 0.49695493300852617,
+      "sensitivity": 0.9878934624697336,
+      "specificity": 0.0
+    },
+    "train_seconds": 193.9
+  },
+  {
+    "fold": 13,
+    "test_subject": "sub-014",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5250094532966614,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "train_seconds": 111.1
   }
 ]

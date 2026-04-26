@@ -172,4 +172,11 @@ def preprocess_raw(
     if cfg.resample_hz is not None:
         raw = raw.resample(cfg.resample_hz, npad="auto", verbose="ERROR")
 
+    # Anonimización: borra timestamps absolutos y nombres del header.
+    # Ya está pseudo-anonimizado por OpenNeuro (sub-XXX), pero aseguramos.
+    try:
+        raw.anonymize(daysback=10000)
+    except Exception:
+        pass
+
     return raw

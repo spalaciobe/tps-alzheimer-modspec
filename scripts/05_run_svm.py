@@ -48,6 +48,10 @@ def main() -> None:
     parser.add_argument("--quick", action="store_true")
     parser.add_argument("--epochs-per-subject", type=int, default=80,
                         help="Subsample por sujeto para acelerar SVM RBF (O(n²)).")
+    parser.add_argument("--per-fold-patches", action="store_true",
+                        help="Usar patch_masks_fold_NN.npy (anti-leakage). "
+                             "Si no, usa patch_masks.npy global (compat).")
+    parser.add_argument("--saliency-method", choices=["gradcam", "vanilla"], default="gradcam")
     args = parser.parse_args()
     set_seed(args.seed)
     logger = get_logger("svm")
@@ -56,35 +60,57 @@ def main() -> None:
     svm_cfg = yaml.safe_load(open(args.svm_config))
     paths = cfg["paths"]
     suffix = "_quick" if args.quick else ""
+    sal_tag = f"_{args.saliency_method}" if args.saliency_method != "gradcam" else ""
 
     modspec_dir = Path(paths["modspec_root"]) / f"modspec_{args.method}_{args.fs}"
-    sal_dir = Path(paths["saliency"]) / f"{args.method}_{args.fs}_seed{args.seed}{suffix}"
-
-    masks = np.load(sal_dir / "patch_masks.npy")
-    patches = [Patch(cluster_id=i, mask=masks[i].astype(bool)) for i in range(masks.shape[0])]
-    if not patches:
-        raise SystemExit("No hay patches; correr 04_extract_saliency_features.py primero")
-    logger.info(f"{len(patches)} patches cargados")
+    sal_dir = Path(paths["saliency"]) / f"{args.method}_{args.fs}_seed{args.seed}{suffix}{sal_tag}"
 
     h5_paths = sorted(modspec_dir.glob("*.h5"))
-    logger.info(f"Calculando features de {len(h5_paths)} sujetos (subsample={args.epochs_per_subject})...")
+    sid_to_idx = {p.stem: i for i, p in enumerate(h5_paths)}
 
-    # Pre-computar features para todos los sujetos UNA vez
-    feats_per_sub: dict[str, tuple[np.ndarray, int]] = {}
-    for p in tqdm(h5_paths, desc="features"):
-        F, y = features_for_h5(p, patches, args.epochs_per_subject, args.seed)
-        feats_per_sub[p.stem] = (F, int(y[0]))
+    # Cargar patches (per-fold o global)
+    per_fold_dir = sal_dir / "per_fold"
+    use_per_fold = args.per_fold_patches and per_fold_dir.exists()
+    if use_per_fold:
+        logger.info(f"Usando patches POR FOLD desde {per_fold_dir}")
+    else:
+        masks = np.load(sal_dir / "patch_masks.npy")
+        patches_global = [Patch(cluster_id=i, mask=masks[i].astype(bool))
+                          for i in range(masks.shape[0])]
+        if not patches_global:
+            raise SystemExit("No hay patches globales; correr 04 primero")
+        logger.info(f"Usando {len(patches_global)} patches globales")
 
     fold_results = []
-    for test_sid in tqdm(feats_per_sub.keys(), desc="LOSO-SVM"):
-        train_sids = [s for s in feats_per_sub if s != test_sid]
-        Xtr = np.concatenate([feats_per_sub[s][0] for s in train_sids], axis=0)
-        ytr = np.concatenate([
-            np.full(feats_per_sub[s][0].shape[0], feats_per_sub[s][1])
-            for s in train_sids
-        ])
-        Xte = feats_per_sub[test_sid][0]
-        yte_label = feats_per_sub[test_sid][1]
+    for test_sid in tqdm(sorted(sid_to_idx.keys()), desc="LOSO-SVM"):
+        fold_idx = sid_to_idx[test_sid]
+        if use_per_fold:
+            mask_path = per_fold_dir / f"patch_masks_fold{fold_idx:02d}.npy"
+            if not mask_path.exists():
+                logger.warning(f"sin patches para fold {fold_idx}, skip")
+                continue
+            masks = np.load(mask_path)
+            patches = [Patch(cluster_id=i, mask=masks[i].astype(bool))
+                       for i in range(masks.shape[0])]
+            if not patches:
+                continue
+        else:
+            patches = patches_global
+
+        # Features por fold (recalculadas con los patches de este fold)
+        train_paths = [p for p in h5_paths if p.stem != test_sid]
+        Xtr_list, ytr_list = [], []
+        for p in train_paths:
+            F, y = features_for_h5(p, patches, args.epochs_per_subject, args.seed)
+            Xtr_list.append(F)
+            ytr_list.append(y)
+        Xtr = np.concatenate(Xtr_list, axis=0)
+        ytr = np.concatenate(ytr_list)
+        Xte, yte = features_for_h5(
+            next(p for p in h5_paths if p.stem == test_sid),
+            patches, args.epochs_per_subject, args.seed,
+        )
+        yte_label = int(yte[0])
 
         sel = select_top_k_features(Xtr, ytr, k=svm_cfg["features"]["top_k"])
         Xtr_s = sel.transform(Xtr)
@@ -100,14 +126,17 @@ def main() -> None:
         subj_score = float(probs[:, 1].mean())
         subj_pred = int(subj_score >= 0.5)
         fold_results.append({
+            "fold": fold_idx,
             "test_subject": test_sid,
             "true": yte_label,
             "pred": subj_pred,
             "score": subj_score,
             "epoch_metrics": epoch_metrics,
+            "n_patches": len(patches),
         })
 
-    out_dir = Path(paths["results"]) / f"svm_{args.method}_{args.fs}_seed{args.seed}{suffix}"
+    pf_tag = "_perfold" if use_per_fold else ""
+    out_dir = Path(paths["results"]) / f"svm_{args.method}_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf_tag}"
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "fold_results.json").write_text(json.dumps(fold_results, indent=2))
 
