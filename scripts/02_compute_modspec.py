@@ -16,9 +16,8 @@ import yaml
 from tqdm import tqdm
 
 from src.cache import config_hash, save_subject
-from src.epoching import make_epochs
 from src.io_bids import list_subjects
-from src.modspec import ModSpecConfig, compute_modulation_spectrum
+from src.modspec import ModSpecConfig, compute_modulation_spectrum_subject
 from src.utils.logging import get_logger
 
 
@@ -85,19 +84,19 @@ def main() -> None:
         if args.fs != int(raw.info["sfreq"]):
             raw = raw.resample(args.fs, npad="auto", verbose="ERROR")
 
-        epochs = make_epochs(
-            raw,
-            duration_s=eps_cfg["duration_s"],
-            overlap_s=eps_cfg["overlap_s"],
+        signal = raw.get_data()  # (n_ch, n_samples)
+        epoch_step = eps_cfg["duration_s"] - eps_cfg["overlap_s"]
+        X = compute_modulation_spectrum_subject(
+            signal,
+            ms_cfg,
+            epoch_duration_s=eps_cfg["duration_s"],
+            epoch_step_s=epoch_step,
             drop_last_s=eps_cfg["drop_last_s"],
         )
-        data = epochs.get_data()  # (n_ep, n_ch, n_samples)
-        if data.shape[0] < eps_cfg["min_epochs_per_subject"]:
+        if X.shape[0] < eps_cfg["min_epochs_per_subject"]:
             logger.warning(
-                f"[{rec.subject_id}] solo {data.shape[0]} epochs (<{eps_cfg['min_epochs_per_subject']})"
+                f"[{rec.subject_id}] solo {X.shape[0]} epochs (<{eps_cfg['min_epochs_per_subject']})"
             )
-
-        X = np.stack([compute_modulation_spectrum(ep, ms_cfg) for ep in data], axis=0)
         save_subject(
             out, X, rec.label_binary,
             np.arange(X.shape[0]), cfg_hash=h,

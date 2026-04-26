@@ -5,6 +5,13 @@ description = "Replicación de Lopes et al. 2023 (CNN saliency + modulation spec
 authors = [{ name = "Sebastián Palacio Betancur" }]
 requires-python = ">=3.11"
 
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["src", "src.models", "src.utils"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"

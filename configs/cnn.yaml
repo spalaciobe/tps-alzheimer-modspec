@@ -13,13 +13,20 @@ train:
   optimizer: nadam
   learning_rate: 1.0e-4
   weight_decay: 1.0e-2       # ≈ L2=1e-2 del paper
-  batch_size: 4
+  batch_size: 64             # paper usa 4; con GPU subimos a 64 (validado, F1 igual o mejor)
   epochs: 50
   early_stopping_patience: 10
   early_stopping_metric: f1_macro
   loss: cross_entropy
   use_class_weights: true
-  scheduler: null            # paper no usa scheduler
+  scheduler: null
+  pin_memory: true           # GPU
+  # Perfil "quick" para correr más rápido en CPU o pruebas
+  quick:
+    batch_size: 32
+    epochs: 10
+    early_stopping_patience: 3
+    epochs_per_subject: 100
 
 aggregation:
   epoch_to_subject: mean_softmax   # alternativa: majority_vote

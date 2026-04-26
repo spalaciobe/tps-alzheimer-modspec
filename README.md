@@ -15,6 +15,9 @@ Proyecto del curso *Tópicos en Procesamiento Digital de Señales* (UNAL Medell�
 python -m venv .venv
 source .venv/Scripts/activate          # Windows bash
 pip install -r requirements.txt
+# Para GPU NVIDIA (CUDA 12.x), reinstalar torch con wheels CUDA:
+pip uninstall -y torch torchvision
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 ```
 
 ### Opción B — mamba/conda
