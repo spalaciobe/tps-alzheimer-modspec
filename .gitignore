@@ -43,6 +43,9 @@ results/figures_high_res/
 Thumbs.db
 desktop.ini
 
+# Claude harness state
+.claude/
+
 # Latex temp (por si compila localmente)
 *.aux
 *.log
