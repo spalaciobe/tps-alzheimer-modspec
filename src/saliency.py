@@ -109,7 +109,7 @@ def vanilla_saliency_per_class(
         raise RuntimeError(f"No hay muestras de la clase {target_class}")
     out = accum / n
     # Normalizar a [0,1] como Grad-CAM
-    out = (out - out.min()) / (out.ptp() + 1e-12)
+    out = (out - out.min()) / (np.ptp(out) + 1e-12)
     return out.astype(np.float32)
 
 

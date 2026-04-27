@@ -33,18 +33,35 @@ Pipeline ejecutado completo sobre RTX 3050 (CUDA 12.4, AMP). Total: ~5 h CNN + ~
 
 ### SVM con patches saliency-guided (réplica Lopes)
 
+#### A) Saliency = Grad-CAM (alineado con propuesta del alumno)
+
 | Método | Accuracy | F1 macro | Sensibilidad | Especificidad | AUC |
 |---|---|---|---|---|---|
 | **STFT** | 0.692 | 0.675 | 0.833 | 0.517 | 0.690 |
 | **CWT**  | **0.754** | **0.749** | 0.806 | **0.690** | **0.812** |
 
-**Tests pareados:**
 - Wilcoxon scores: p = 0.683.
-- Wilcoxon correctness: p = 0.371.
 - **DeLong AUC: Δ=-0.123, z=-1.83, p = 0.067** (marginal, casi significativo).
 - Bootstrap CI95: STFT [0.55, 0.81], CWT [0.65, 0.85].
 
-**Lectura**: CWT supera STFT con **+6.2 pts accuracy** y **+12.2 pts AUC**. La diferencia en AUC es **marginalmente significativa** (DeLong p=0.067 < 0.10) — con 65 sujetos, la potencia estadística está al límite. Una corrida con 3-5 seeds o un test set externo despejaría la duda.
+#### B) Saliency = Vanilla gradient (paper-faithful Lopes)
+
+| Método | Accuracy | F1 macro | Sensibilidad | Especificidad | AUC |
+|---|---|---|---|---|---|
+| **STFT** | **0.769** | 0.766 | 0.806 | 0.724 | **0.843** |
+| **CWT**  | **0.769** | 0.766 | 0.806 | 0.724 | 0.815 |
+
+- Wilcoxon scores: p = 0.893.
+- DeLong AUC: Δ=+0.028, z=0.44, **p = 0.660** (NO significativo).
+- STFT y CWT producen el MISMO accuracy (0.769) — diferencia solo en AUC (0.028, sin significancia).
+
+**Lectura crítica**: la elección del método de saliency cambia la conclusión:
+- Con **vanilla saliency** (paper-faithful), STFT ≈ CWT — ambos AUC ~0.83. **No hay ganancia con CWT.**
+- Con **Grad-CAM**, CWT > STFT en AUC (Δ=12 pts, p=0.067 marginal).
+
+Esto sugiere que la diferencia STFT vs CWT en SVM con Grad-CAM puede ser **artefacto del método saliency**, no una mejora real de la representación T-F. El experimento más fiel al paper original (vanilla) no muestra ventaja de CWT.
+
+**Comparación con paper Lopes 2023**: SVM STFT vanilla full obtiene **AUC 0.843** vs paper T2 (N vs AD) AUC no reportado pero acc 0.71 ± 0.02. Acc 0.769 — replica orden de magnitud y supera ligeramente, posiblemente por dataset más grande (65 vs 39 sujetos en T2).
 
 ## Comparación con corrida quick (validación de mejora)
 
@@ -73,14 +90,28 @@ Pipeline ejecutado completo sobre RTX 3050 (CUDA 12.4, AMP). Total: ~5 h CNN + ~
 
 **Replicación validada**: el SVM full STFT obtiene 0.69 acc, indistinguible del 0.71 del paper (diferencia dentro de CI95). Confirma que el pipeline replica fielmente.
 
-## Lectura final
+## Lectura final (revisada con ablation vanilla)
 
-1. **El pipeline replica el orden de magnitud del paper de Lopes** sobre dataset público con anti-leakage estricto.
-2. **CWT-Morlet supera a STFT consistentemente**:
-   - CNN end-to-end: +7.7 pts accuracy, Wilcoxon p=0.006 ✓
-   - SVM patches: +6.2 pts accuracy, +12.2 pts AUC, DeLong p=0.067 (marginal)
-3. **La hipótesis de la propuesta se valida parcialmente**: CWT mejora pero requiere más potencia estadística (más seeds o test externo) para significancia plena.
-4. **Las desviaciones documentadas** (Grad-CAM en lugar de vanilla, batch 128, anti-leakage estricto) NO invalidan la conclusión.
+1. **El pipeline replica el orden de magnitud del paper de Lopes** sobre dataset público con anti-leakage estricto. SVM vanilla full: Acc 0.769, AUC 0.843 (paper: Acc 0.71).
+
+2. **CWT vs STFT depende del método de saliency**:
+   | Clasificador / Saliency | STFT acc/AUC | CWT acc/AUC | Test |
+   |---|---|---|---|
+   | CNN end-to-end | 0.631 / 0.680 | 0.708 / 0.670 | Wilcoxon p=0.006 ✓ |
+   | SVM Grad-CAM | 0.692 / 0.690 | 0.754 / 0.812 | DeLong p=0.067 marginal |
+   | **SVM vanilla (paper)** | **0.769 / 0.843** | **0.769 / 0.815** | DeLong p=0.66 ns |
+
+3. **Conclusión defendible para el TFM**:
+   - **CWT NO supera a STFT con la metodología fiel al paper** (vanilla saliency).
+   - El supuesto efecto positivo de CWT con Grad-CAM puede ser artefacto del método saliency, no una mejora real de la representación T-F.
+   - La hipótesis de la propuesta queda **NO confirmada**, pero el experimento es metodológicamente sólido.
+
+4. **Conclusión positiva**: la replicación independiente del paper sobre dataset público funciona — orden de magnitud coherente con Lopes 2023 (Acc ~0.77 vs 0.71 reportado).
+
+5. **Para publicación, antes de claims**:
+   - 3-5 seeds para varianza.
+   - Test externo (otro dataset EEG-AD).
+   - Comparar grad-cam vs vanilla en otras tareas (no solo AD vs HC).
 
 ## Anti-leakage — fixes aplicados
 
