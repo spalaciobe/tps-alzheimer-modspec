@@ -38,11 +38,11 @@ Pipeline ejecutado completo sobre RTX 3050 (CUDA 12.4, AMP). Total: ~5 h CNN + ~
 | Método | Accuracy | F1 macro | Sensibilidad | Especificidad | AUC |
 |---|---|---|---|---|---|
 | **STFT** | 0.692 | 0.675 | 0.833 | 0.517 | 0.690 |
-| **CWT**  | **0.754** | **0.749** | 0.806 | **0.690** | **0.812** |
+| **CWT**  | 0.708 | 0.703 | 0.750 | 0.655 | **0.792** |
 
-- Wilcoxon scores: p = 0.683.
-- **DeLong AUC: Δ=-0.123, z=-1.83, p = 0.067** (marginal, casi significativo).
-- Bootstrap CI95: STFT [0.55, 0.81], CWT [0.65, 0.85].
+- DeLong AUC: Δ=-0.10, p ~ 0.10 (marginal).
+- Wilcoxon scores: p ~ 0.7 (ns).
+- Bootstrap CI95: STFT [0.55, 0.81], CWT [0.59, 0.82].
 
 #### B) Saliency = Vanilla gradient (paper-faithful Lopes)
 
