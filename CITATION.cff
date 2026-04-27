@@ -1,0 +1,67 @@
+cff-version: 1.2.0
+title: "Replicación de Lopes et al. 2023 (CNN saliency + EEG modulation spectrum) sobre OpenNeuro ds004504 con comparación STFT vs CWT-Morlet"
+authors:
+  - family-names: "Palacio Betancur"
+    given-names: "Sebastián"
+    affiliation: "Universidad Nacional de Colombia, Sede Medellín"
+date-released: 2026-05-15
+license: MIT
+repository-code: "https://github.com/spalaciobe/tps-alzheimer-modspec"
+keywords:
+  - EEG
+  - Alzheimer
+  - modulation spectrum
+  - CNN
+  - saliency maps
+  - LOSO cross-validation
+  - replication study
+references:
+  - type: article-journal
+    authors:
+      - family-names: Lopes
+        given-names: M.
+      - family-names: Cassani
+        given-names: R.
+      - family-names: Falk
+        given-names: T. H.
+    title: "Using CNN saliency maps and EEG modulation spectra for improved and more interpretable machine learning-based Alzheimer's disease diagnosis"
+    journal: "IEEE Transactions on Neural Systems and Rehabilitation Engineering"
+    volume: 31
+    start: 1310
+    end: 1319
+    year: 2023
+    doi: "10.1109/TNSRE.2023.3242076"
+  - type: dataset
+    authors:
+      - family-names: Miltiadous
+        given-names: A.
+    title: "A dataset of scalp EEG recordings of Alzheimer's disease, frontotemporal dementia and healthy subjects"
+    publisher: "OpenNeuro"
+    year: 2023
+    identifier: "ds004504"
+    url: "https://openneuro.org/datasets/ds004504"
+  - type: conference-paper
+    authors:
+      - family-names: Selvaraju
+        given-names: R. R.
+    title: "Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization"
+    conference: "ICCV"
+    year: 2017
+  - type: conference-paper
+    authors:
+      - family-names: Simonyan
+        given-names: K.
+    title: "Deep Inside Convolutional Networks: Visualising Image Classification Models and Saliency Maps"
+    conference: "ICLR Workshop"
+    year: 2014
+  - type: software
+    authors:
+      - name: "MNE-Python developers"
+    title: "MNE-Python"
+    url: "https://mne.tools"
+  - type: software
+    authors:
+      - family-names: Pion-Tonachini
+        given-names: L.
+    title: "ICLabel: An automated electroencephalographic independent component classifier"
+    year: 2019

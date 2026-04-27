@@ -130,16 +130,18 @@ def main() -> None:
     parser.add_argument("--quick", action="store_true")
     parser.add_argument("--per-fold", action="store_true",
                         help="usar SVM perfold dirs y compare_*_perfold.json")
+    parser.add_argument("--saliency-method", choices=["gradcam", "vanilla"], default="gradcam")
     parser.add_argument("--config", type=Path, default=Path("configs/config.yaml"))
     args = parser.parse_args()
     suffix = "_quick" if args.quick else ""
     pf = "_perfold" if args.per_fold else ""
+    sal_tag = f"_{args.saliency_method}" if args.saliency_method != "gradcam" else ""
 
     cfg = yaml.safe_load(open(args.config))
     paths = cfg["paths"]
     res = Path(paths["results"])
     sal = Path(paths["saliency"])
-    figs = res / f"figures{suffix}"
+    figs = res / f"figures{suffix}{sal_tag}"
     figs.mkdir(parents=True, exist_ok=True)
 
     fig_modspec_class_means(
@@ -150,18 +152,19 @@ def main() -> None:
         figs / "modspec_means_cwt.png", "CWT")
 
     fig_saliency_compare(
-        sal / f"stft_{args.fs}_seed{args.seed}{suffix}",
-        sal / f"cwt_{args.fs}_seed{args.seed}{suffix}",
+        sal / f"stft_{args.fs}_seed{args.seed}{suffix}{sal_tag}",
+        sal / f"cwt_{args.fs}_seed{args.seed}{suffix}{sal_tag}",
         figs / "saliency_compare.png")
 
     for clf in ("svm", "cnn"):
         clf_pf = pf if clf == "svm" else ""
-        comp = res / f"compare_{clf}_{args.fs}_seed{args.seed}{suffix}{clf_pf}.json"
+        clf_sal = sal_tag if clf == "svm" else ""
+        comp = res / f"compare_{clf}_{args.fs}_seed{args.seed}{suffix}{clf_sal}{clf_pf}.json"
         if comp.exists():
             fig_metrics_comparison(comp, figs / f"compare_{clf}.png")
 
-    svm_stft = res / f"svm_stft_{args.fs}_seed{args.seed}{suffix}{pf}"
-    svm_cwt = res / f"svm_cwt_{args.fs}_seed{args.seed}{suffix}{pf}"
+    svm_stft = res / f"svm_stft_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf}"
+    svm_cwt = res / f"svm_cwt_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf}"
     if svm_stft.exists() and svm_cwt.exists():
         fig_roc_curves(svm_stft, svm_cwt, figs / "roc_svm.png")
         fig_confusion_matrices(svm_stft, svm_cwt, figs / "confusion_svm.png")

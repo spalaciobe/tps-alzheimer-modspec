@@ -37,9 +37,11 @@ def main() -> None:
     parser.add_argument("--quick", action="store_true")
     parser.add_argument("--per-fold", action="store_true",
                         help="Buscar resultados SVM en directorios _perfold")
+    parser.add_argument("--saliency-method", choices=["gradcam", "vanilla"], default="gradcam")
     args = parser.parse_args()
     suffix = "_quick" if args.quick else ""
     pf = "_perfold" if args.per_fold else ""
+    sal_tag = f"_{args.saliency_method}" if args.saliency_method != "gradcam" else ""
     logger = get_logger("compare")
 
     cfg = yaml.safe_load(open(args.config))
@@ -49,8 +51,8 @@ def main() -> None:
         stft_dir = results_root / f"stft_{args.fs}_seed{args.seed}{suffix}"
         cwt_dir = results_root / f"cwt_{args.fs}_seed{args.seed}{suffix}"
     else:
-        stft_dir = results_root / f"svm_stft_{args.fs}_seed{args.seed}{suffix}{pf}"
-        cwt_dir = results_root / f"svm_cwt_{args.fs}_seed{args.seed}{suffix}{pf}"
+        stft_dir = results_root / f"svm_stft_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf}"
+        cwt_dir = results_root / f"svm_cwt_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf}"
 
     stft_scores = load_fold_scores(stft_dir)
     cwt_scores = load_fold_scores(cwt_dir)
@@ -86,7 +88,7 @@ def main() -> None:
         "wilcoxon_correct": w_correct,
         "delong_auc": delong,
     }
-    out = Path(cfg["paths"]["results"]) / f"compare_{args.classifier}_{args.fs}_seed{args.seed}{suffix}{pf}.json"
+    out = Path(cfg["paths"]["results"]) / f"compare_{args.classifier}_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf}.json"
     out.write_text(json.dumps(summary, indent=2))
     logger.info(json.dumps(summary, indent=2))
 
