@@ -128,9 +128,12 @@ def main() -> None:
     parser.add_argument("--fs", type=int, default=200)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--quick", action="store_true")
+    parser.add_argument("--per-fold", action="store_true",
+                        help="usar SVM perfold dirs y compare_*_perfold.json")
     parser.add_argument("--config", type=Path, default=Path("configs/config.yaml"))
     args = parser.parse_args()
     suffix = "_quick" if args.quick else ""
+    pf = "_perfold" if args.per_fold else ""
 
     cfg = yaml.safe_load(open(args.config))
     paths = cfg["paths"]
@@ -152,12 +155,13 @@ def main() -> None:
         figs / "saliency_compare.png")
 
     for clf in ("svm", "cnn"):
-        comp = res / f"compare_{clf}_{args.fs}_seed{args.seed}{suffix}.json"
+        clf_pf = pf if clf == "svm" else ""
+        comp = res / f"compare_{clf}_{args.fs}_seed{args.seed}{suffix}{clf_pf}.json"
         if comp.exists():
             fig_metrics_comparison(comp, figs / f"compare_{clf}.png")
 
-    svm_stft = res / f"svm_stft_{args.fs}_seed{args.seed}{suffix}"
-    svm_cwt = res / f"svm_cwt_{args.fs}_seed{args.seed}{suffix}"
+    svm_stft = res / f"svm_stft_{args.fs}_seed{args.seed}{suffix}{pf}"
+    svm_cwt = res / f"svm_cwt_{args.fs}_seed{args.seed}{suffix}{pf}"
     if svm_stft.exists() and svm_cwt.exists():
         fig_roc_curves(svm_stft, svm_cwt, figs / "roc_svm.png")
         fig_confusion_matrices(svm_stft, svm_cwt, figs / "confusion_svm.png")

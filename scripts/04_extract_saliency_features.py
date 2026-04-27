@@ -52,11 +52,27 @@ def saliency_for_train_subjects(
     model, train_paths, stats, sal_fn, device, max_subjects: int | None = None,
     seed: int = 0,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Promedia saliency map por clase sobre los sujetos de train."""
+    """Promedia saliency map por clase sobre los sujetos de train.
+
+    Subset estratificado: si max_subjects=20, toma 10 de cada clase
+    (o todos si no hay suficientes).
+    """
     if max_subjects and len(train_paths) > max_subjects:
         rng = np.random.default_rng(seed)
-        idx = rng.choice(len(train_paths), max_subjects, replace=False)
-        train_paths = [train_paths[i] for i in sorted(idx)]
+        # Estratificar por clase
+        by_class: dict[int, list[Path]] = {0: [], 1: []}
+        for p in train_paths:
+            y = load_subject(p)["y"]
+            by_class[y].append(p)
+        per_class = max(1, max_subjects // 2)
+        picked: list[Path] = []
+        for cls, paths in by_class.items():
+            if len(paths) <= per_class:
+                picked.extend(paths)
+            else:
+                idx = rng.choice(len(paths), per_class, replace=False)
+                picked.extend([paths[i] for i in sorted(idx)])
+        train_paths = picked
     accum = {0: None, 1: None}
     counts = {0: 0, 1: 0}
     for p in train_paths:
@@ -68,7 +84,13 @@ def saliency_for_train_subjects(
             accum[cls] = m if accum[cls] is None else accum[cls] + m
             counts[cls] += 1
         except RuntimeError:
-            pass
+            # Si only_correct=True no encontró aciertos, reintentar con todas las muestras
+            try:
+                m = sal_fn(model, loader, target_class=cls, device=device, only_correct=False)
+                accum[cls] = m if accum[cls] is None else accum[cls] + m
+                counts[cls] += 1
+            except RuntimeError:
+                continue
     if accum[0] is None or accum[1] is None:
         raise RuntimeError("Faltan ejemplares de alguna clase en train")
     return accum[0] / counts[0], accum[1] / counts[1]
@@ -131,6 +153,26 @@ def main() -> None:
         if not ckpt.exists():
             logger.warning(f"falta ckpt fold {fold_idx}")
             continue
+        # Resume: si ya hay patches para este fold, cargar y saltar el cómputo
+        existing_mask = sal_dir / "per_fold" / f"patch_masks_fold{fold_idx:02d}.npy"
+        if existing_mask.exists():
+            try:
+                m_ad = np.load(sal_dir / "per_fold" / f"saliency_AD_fold{fold_idx:02d}.npy")
+                m_hc = np.load(sal_dir / "per_fold" / f"saliency_HC_fold{fold_idx:02d}.npy")
+                global_accum[1] = m_ad if global_accum[1] is None else global_accum[1] + m_ad
+                global_accum[0] = m_hc if global_accum[0] is None else global_accum[0] + m_hc
+                global_counts[0] += 1
+                global_counts[1] += 1
+                fold_records.append({
+                    "fold": fold_idx,
+                    "test_subject": test_path.stem,
+                    "n_patches": int(np.load(existing_mask).shape[0]),
+                    "thr": None, "k": None, "score": None,
+                    "resumed": True,
+                })
+                continue
+            except Exception:
+                pass
 
         train_paths = [p for p in h5_paths if p != test_path]
         # Stats sobre train del fold (consistente con CNN training)
@@ -153,11 +195,15 @@ def main() -> None:
         model.to(device).eval()
 
         # Saliency POR FOLD (solo sobre train_paths del fold)
-        sal_HC, sal_AD = saliency_for_train_subjects(
-            model, train_paths, stats, sal_fn, device,
-            max_subjects=args.max_subjects_per_fold,
-            seed=args.seed + fold_idx,
-        )
+        try:
+            sal_HC, sal_AD = saliency_for_train_subjects(
+                model, train_paths, stats, sal_fn, device,
+                max_subjects=args.max_subjects_per_fold,
+                seed=args.seed + fold_idx,
+            )
+        except RuntimeError as e:
+            logger.warning(f"fold {fold_idx} skip: {e}")
+            continue
         diff = sal_AD - sal_HC
 
         # Grid search real (opcional) o fijo p=88, K=4
@@ -183,10 +229,11 @@ def main() -> None:
                             sep += abs(ad_mean - hc_mean)
                     sep /= max(len(patches), 1)
                     if sep > best["score"]:
-                        best = {"score": sep, "thr": thr, "k": k}
+                        best = {"score": float(sep), "thr": int(thr), "k": int(k)}
             patches = find_patches(np.abs(diff), best["thr"], best["k"],
                                    random_state=cluster_cfg["random_state"])
-            grid_info = {"thr": best["thr"], "k": best["k"], "score": best["score"]}
+            grid_info = {"thr": float(best["thr"]), "k": int(best["k"]),
+                         "score": float(best["score"])}
         else:
             patches = find_patches(np.abs(diff), threshold_pct=88.0, n_clusters=4,
                                    random_state=cluster_cfg["random_state"])

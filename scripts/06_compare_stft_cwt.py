@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from src.stats import bootstrap_ci, wilcoxon_paired
+from src.stats import bootstrap_ci, delong_test, wilcoxon_paired
 from src.utils.logging import get_logger
 
 
@@ -35,8 +35,11 @@ def main() -> None:
     parser.add_argument("--classifier", choices=["cnn", "svm"], default="cnn")
     parser.add_argument("--config", type=Path, default=Path("configs/config.yaml"))
     parser.add_argument("--quick", action="store_true")
+    parser.add_argument("--per-fold", action="store_true",
+                        help="Buscar resultados SVM en directorios _perfold")
     args = parser.parse_args()
     suffix = "_quick" if args.quick else ""
+    pf = "_perfold" if args.per_fold else ""
     logger = get_logger("compare")
 
     cfg = yaml.safe_load(open(args.config))
@@ -46,8 +49,8 @@ def main() -> None:
         stft_dir = results_root / f"stft_{args.fs}_seed{args.seed}{suffix}"
         cwt_dir = results_root / f"cwt_{args.fs}_seed{args.seed}{suffix}"
     else:
-        stft_dir = results_root / f"svm_stft_{args.fs}_seed{args.seed}{suffix}"
-        cwt_dir = results_root / f"svm_cwt_{args.fs}_seed{args.seed}{suffix}"
+        stft_dir = results_root / f"svm_stft_{args.fs}_seed{args.seed}{suffix}{pf}"
+        cwt_dir = results_root / f"svm_cwt_{args.fs}_seed{args.seed}{suffix}{pf}"
 
     stft_scores = load_fold_scores(stft_dir)
     cwt_scores = load_fold_scores(cwt_dir)
@@ -69,6 +72,10 @@ def main() -> None:
     acc_stft, lo_stft, hi_stft = bootstrap_ci(a_correct.astype(float), n_boot=1000, seed=args.seed)
     acc_cwt, lo_cwt, hi_cwt = bootstrap_ci(b_correct.astype(float), n_boot=1000, seed=args.seed)
 
+    # DeLong test sobre AUC pareado
+    y_true_arr = np.array([truth[s] for s in common])
+    delong = delong_test(y_true_arr, a, b)
+
     summary = {
         "n_subjects": len(common),
         "classifier": args.classifier,
@@ -77,8 +84,9 @@ def main() -> None:
         "cwt": {"accuracy": acc_cwt, "ci95": [lo_cwt, hi_cwt]},
         "wilcoxon_score": w_score,
         "wilcoxon_correct": w_correct,
+        "delong_auc": delong,
     }
-    out = Path(cfg["paths"]["results"]) / f"compare_{args.classifier}_{args.fs}_seed{args.seed}{suffix}.json"
+    out = Path(cfg["paths"]["results"]) / f"compare_{args.classifier}_{args.fs}_seed{args.seed}{suffix}{pf}.json"
     out.write_text(json.dumps(summary, indent=2))
     logger.info(json.dumps(summary, indent=2))
 

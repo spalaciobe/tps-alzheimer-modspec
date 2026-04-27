@@ -1,0 +1,912 @@
+[
+  {
+    "fold": 0,
+    "test_subject": "sub-001",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5482509521619093,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 1,
+    "test_subject": "sub-002",
+    "true": 1,
+    "pred": 0,
+    "score": 0.3633413415785452,
+    "epoch_metrics": {
+      "accuracy": 0.3,
+      "f1_macro": 0.23076923076923078,
+      "sensitivity": 0.3,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 2,
+    "test_subject": "sub-003",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5502077706233565,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 3,
+    "test_subject": "sub-004",
+    "true": 1,
+    "pred": 1,
+    "score": 0.7975370792665254,
+    "epoch_metrics": {
+      "accuracy": 0.9875,
+      "f1_macro": 0.4968553459119497,
+      "sensitivity": 0.9875,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 4,
+    "test_subject": "sub-005",
+    "true": 1,
+    "pred": 0,
+    "score": 0.47163370951575356,
+    "epoch_metrics": {
+      "accuracy": 0.2,
+      "f1_macro": 0.16666666666666666,
+      "sensitivity": 0.2,
+      "specificity": 0.0
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 5,
+    "test_subject": "sub-006",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5423619432014237,
+    "epoch_metrics": {
+      "accuracy": 0.7125,
+      "f1_macro": 0.41605839416058393,
+      "sensitivity": 0.7125,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 6,
+    "test_subject": "sub-007",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5482559938598282,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 7,
+    "test_subject": "sub-008",
+    "true": 1,
+    "pred": 1,
+    "score": 0.8905737346243896,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 8,
+    "test_subject": "sub-009",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5205398030722321,
+    "epoch_metrics": {
+      "accuracy": 0.5375,
+      "f1_macro": 0.34959349593495936,
+      "sensitivity": 0.5375,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 9,
+    "test_subject": "sub-010",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5988049132795764,
+    "epoch_metrics": {
+      "accuracy": 0.975,
+      "f1_macro": 0.4936708860759494,
+      "sensitivity": 0.975,
+      "specificity": 0.0
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 10,
+    "test_subject": "sub-011",
+    "true": 1,
+    "pred": 0,
+    "score": 0.32794002691406643,
+    "epoch_metrics": {
+      "accuracy": 0.1125,
+      "f1_macro": 0.10112359550561797,
+      "sensitivity": 0.1125,
+      "specificity": 0.0
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 11,
+    "test_subject": "sub-012",
+    "true": 1,
+    "pred": 1,
+    "score": 0.6641154551393813,
+    "epoch_metrics": {
+      "accuracy": 0.8375,
+      "f1_macro": 0.4557823129251701,
+      "sensitivity": 0.8375,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 12,
+    "test_subject": "sub-013",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5491082301290019,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 13,
+    "test_subject": "sub-014",
+    "true": 1,
+    "pred": 1,
+    "score": 0.7609603172276979,
+    "epoch_metrics": {
+      "accuracy": 0.9625,
+      "f1_macro": 0.49044585987261147,
+      "sensitivity": 0.9625,
+      "specificity": 0.0
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 14,
+    "test_subject": "sub-015",
+    "true": 1,
+    "pred": 0,
+    "score": 0.41297807442527096,
+    "epoch_metrics": {
+      "accuracy": 0.3625,
+      "f1_macro": 0.26605504587155965,
+      "sensitivity": 0.3625,
+      "specificity": 0.0
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 15,
+    "test_subject": "sub-016",
+    "true": 1,
+    "pred": 1,
+    "score": 0.804532424538522,
+    "epoch_metrics": {
+      "accuracy": 0.9625,
+      "f1_macro": 0.49044585987261147,
+      "sensitivity": 0.9625,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 16,
+    "test_subject": "sub-017",
+    "true": 1,
+    "pred": 1,
+    "score": 0.7825491167264855,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 17,
+    "test_subject": "sub-018",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5466046663049204,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 18,
+    "test_subject": "sub-019",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5489785536274449,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 19,
+    "test_subject": "sub-020",
+    "true": 1,
+    "pred": 1,
+    "score": 0.6247917709789942,
+    "epoch_metrics": {
+      "accuracy": 0.675,
+      "f1_macro": 0.40298507462686567,
+      "sensitivity": 0.675,
+      "specificity": 0.0
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 20,
+    "test_subject": "sub-021",
+    "true": 1,
+    "pred": 1,
+    "score": 0.7185978486301806,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 21,
+    "test_subject": "sub-022",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5469473807785328,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 22,
+    "test_subject": "sub-023",
+    "true": 1,
+    "pred": 1,
+    "score": 0.6071380264877815,
+    "epoch_metrics": {
+      "accuracy": 0.7625,
+      "f1_macro": 0.4326241134751773,
+      "sensitivity": 0.7625,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 23,
+    "test_subject": "sub-024",
+    "true": 1,
+    "pred": 1,
+    "score": 0.8283239397712711,
+    "epoch_metrics": {
+      "accuracy": 0.9875,
+      "f1_macro": 0.4968553459119497,
+      "sensitivity": 0.9875,
+      "specificity": 0.0
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 24,
+    "test_subject": "sub-025",
+    "true": 1,
+    "pred": 0,
+    "score": 0.21490018836781039,
+    "epoch_metrics": {
+      "accuracy": 0.0125,
+      "f1_macro": 0.012345679012345678,
+      "sensitivity": 0.0125,
+      "specificity": 0.0
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 25,
+    "test_subject": "sub-026",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5467411244597412,
+    "epoch_metrics": {
+      "accuracy": 0.9875,
+      "f1_macro": 0.4968553459119497,
+      "sensitivity": 0.9875,
+      "specificity": 0.0
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 26,
+    "test_subject": "sub-027",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5467948619466512,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 27,
+    "test_subject": "sub-028",
+    "true": 1,
+    "pred": 1,
+    "score": 0.7239571639208677,
+    "epoch_metrics": {
+      "accuracy": 0.9625,
+      "f1_macro": 0.49044585987261147,
+      "sensitivity": 0.9625,
+      "specificity": 0.0
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 28,
+    "test_subject": "sub-029",
+    "true": 1,
+    "pred": 1,
+    "score": 0.7336998543223817,
+    "epoch_metrics": {
+      "accuracy": 0.975,
+      "f1_macro": 0.4936708860759494,
+      "sensitivity": 0.975,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 29,
+    "test_subject": "sub-030",
+    "true": 1,
+    "pred": 0,
+    "score": 0.4922838543237894,
+    "epoch_metrics": {
+      "accuracy": 0.65,
+      "f1_macro": 0.3939393939393939,
+      "sensitivity": 0.65,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 30,
+    "test_subject": "sub-031",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5489785667279794,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 31,
+    "test_subject": "sub-032",
+    "true": 1,
+    "pred": 1,
+    "score": 0.6958234438226444,
+    "epoch_metrics": {
+      "accuracy": 0.95,
+      "f1_macro": 0.48717948717948717,
+      "sensitivity": 0.95,
+      "specificity": 0.0
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 32,
+    "test_subject": "sub-033",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5499348985729056,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 33,
+    "test_subject": "sub-034",
+    "true": 1,
+    "pred": 1,
+    "score": 0.685276169335459,
+    "epoch_metrics": {
+      "accuracy": 0.9875,
+      "f1_macro": 0.4968553459119497,
+      "sensitivity": 0.9875,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 34,
+    "test_subject": "sub-035",
+    "true": 1,
+    "pred": 1,
+    "score": 0.724649124963409,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 35,
+    "test_subject": "sub-036",
+    "true": 1,
+    "pred": 1,
+    "score": 0.5482684050120885,
+    "epoch_metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "sensitivity": 1.0,
+      "specificity": 0.0
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 36,
+    "test_subject": "sub-037",
+    "true": 0,
+    "pred": 1,
+    "score": 0.6678618586964317,
+    "epoch_metrics": {
+      "accuracy": 0.0625,
+      "f1_macro": 0.058823529411764705,
+      "sensitivity": 0.0,
+      "specificity": 0.0625
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 37,
+    "test_subject": "sub-038",
+    "true": 0,
+    "pred": 1,
+    "score": 0.5580439460740514,
+    "epoch_metrics": {
+      "accuracy": 0.325,
+      "f1_macro": 0.24528301886792453,
+      "sensitivity": 0.0,
+      "specificity": 0.325
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 38,
+    "test_subject": "sub-039",
+    "true": 0,
+    "pred": 0,
+    "score": 0.4607533544554247,
+    "epoch_metrics": {
+      "accuracy": 0.8375,
+      "f1_macro": 0.4557823129251701,
+      "sensitivity": 0.0,
+      "specificity": 0.8375
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 39,
+    "test_subject": "sub-040",
+    "true": 0,
+    "pred": 1,
+    "score": 0.5785404145020856,
+    "epoch_metrics": {
+      "accuracy": 0.4,
+      "f1_macro": 0.2857142857142857,
+      "sensitivity": 0.0,
+      "specificity": 0.4
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 40,
+    "test_subject": "sub-041",
+    "true": 0,
+    "pred": 1,
+    "score": 0.5653582256010157,
+    "epoch_metrics": {
+      "accuracy": 0.0,
+      "f1_macro": 0.0,
+      "sensitivity": 0.0,
+      "specificity": 0.0
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 41,
+    "test_subject": "sub-042",
+    "true": 0,
+    "pred": 1,
+    "score": 0.5627983978817129,
+    "epoch_metrics": {
+      "accuracy": 0.0,
+      "f1_macro": 0.0,
+      "sensitivity": 0.0,
+      "specificity": 0.0
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 42,
+    "test_subject": "sub-043",
+    "true": 0,
+    "pred": 1,
+    "score": 0.7485623219657905,
+    "epoch_metrics": {
+      "accuracy": 0.05,
+      "f1_macro": 0.047619047619047616,
+      "sensitivity": 0.0,
+      "specificity": 0.05
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 43,
+    "test_subject": "sub-044",
+    "true": 0,
+    "pred": 0,
+    "score": 0.32680352756443476,
+    "epoch_metrics": {
+      "accuracy": 0.85,
+      "f1_macro": 0.4594594594594595,
+      "sensitivity": 0.0,
+      "specificity": 0.85
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 44,
+    "test_subject": "sub-045",
+    "true": 0,
+    "pred": 1,
+    "score": 0.6396744644896502,
+    "epoch_metrics": {
+      "accuracy": 0.1875,
+      "f1_macro": 0.15789473684210525,
+      "sensitivity": 0.0,
+      "specificity": 0.1875
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 45,
+    "test_subject": "sub-046",
+    "true": 0,
+    "pred": 0,
+    "score": 0.22340456490613358,
+    "epoch_metrics": {
+      "accuracy": 0.8875,
+      "f1_macro": 0.47019867549668876,
+      "sensitivity": 0.0,
+      "specificity": 0.8875
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 46,
+    "test_subject": "sub-047",
+    "true": 0,
+    "pred": 0,
+    "score": 0.21062813665787167,
+    "epoch_metrics": {
+      "accuracy": 0.9375,
+      "f1_macro": 0.4838709677419355,
+      "sensitivity": 0.0,
+      "specificity": 0.9375
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 47,
+    "test_subject": "sub-048",
+    "true": 0,
+    "pred": 0,
+    "score": 0.47698766013885197,
+    "epoch_metrics": {
+      "accuracy": 0.5625,
+      "f1_macro": 0.36,
+      "sensitivity": 0.0,
+      "specificity": 0.5625
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 48,
+    "test_subject": "sub-049",
+    "true": 0,
+    "pred": 0,
+    "score": 0.22223470946422816,
+    "epoch_metrics": {
+      "accuracy": 0.95,
+      "f1_macro": 0.48717948717948717,
+      "sensitivity": 0.0,
+      "specificity": 0.95
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 49,
+    "test_subject": "sub-050",
+    "true": 0,
+    "pred": 1,
+    "score": 0.5637895788318097,
+    "epoch_metrics": {
+      "accuracy": 0.0,
+      "f1_macro": 0.0,
+      "sensitivity": 0.0,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 50,
+    "test_subject": "sub-051",
+    "true": 0,
+    "pred": 0,
+    "score": 0.46347166718303134,
+    "epoch_metrics": {
+      "accuracy": 0.8,
+      "f1_macro": 0.4444444444444444,
+      "sensitivity": 0.0,
+      "specificity": 0.8
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 51,
+    "test_subject": "sub-052",
+    "true": 0,
+    "pred": 0,
+    "score": 0.38613233809108005,
+    "epoch_metrics": {
+      "accuracy": 0.5625,
+      "f1_macro": 0.36,
+      "sensitivity": 0.0,
+      "specificity": 0.5625
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 52,
+    "test_subject": "sub-053",
+    "true": 0,
+    "pred": 0,
+    "score": 0.4442924371788578,
+    "epoch_metrics": {
+      "accuracy": 0.75,
+      "f1_macro": 0.42857142857142855,
+      "sensitivity": 0.0,
+      "specificity": 0.75
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 53,
+    "test_subject": "sub-054",
+    "true": 0,
+    "pred": 0,
+    "score": 0.4540251996817949,
+    "epoch_metrics": {
+      "accuracy": 0.7875,
+      "f1_macro": 0.4405594405594406,
+      "sensitivity": 0.0,
+      "specificity": 0.7875
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 54,
+    "test_subject": "sub-055",
+    "true": 0,
+    "pred": 0,
+    "score": 0.46693870391382786,
+    "epoch_metrics": {
+      "accuracy": 0.5,
+      "f1_macro": 0.3333333333333333,
+      "sensitivity": 0.0,
+      "specificity": 0.5
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 55,
+    "test_subject": "sub-056",
+    "true": 0,
+    "pred": 0,
+    "score": 0.36720709752583713,
+    "epoch_metrics": {
+      "accuracy": 0.8375,
+      "f1_macro": 0.4557823129251701,
+      "sensitivity": 0.0,
+      "specificity": 0.8375
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 56,
+    "test_subject": "sub-057",
+    "true": 0,
+    "pred": 0,
+    "score": 0.39291705372265257,
+    "epoch_metrics": {
+      "accuracy": 0.8625,
+      "f1_macro": 0.46308724832214765,
+      "sensitivity": 0.0,
+      "specificity": 0.8625
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 57,
+    "test_subject": "sub-058",
+    "true": 0,
+    "pred": 0,
+    "score": 0.2345277992729967,
+    "epoch_metrics": {
+      "accuracy": 0.9625,
+      "f1_macro": 0.49044585987261147,
+      "sensitivity": 0.0,
+      "specificity": 0.9625
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 58,
+    "test_subject": "sub-059",
+    "true": 0,
+    "pred": 1,
+    "score": 0.5637668447437665,
+    "epoch_metrics": {
+      "accuracy": 0.0,
+      "f1_macro": 0.0,
+      "sensitivity": 0.0,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 59,
+    "test_subject": "sub-060",
+    "true": 0,
+    "pred": 1,
+    "score": 0.7418638854553687,
+    "epoch_metrics": {
+      "accuracy": 0.0,
+      "f1_macro": 0.0,
+      "sensitivity": 0.0,
+      "specificity": 0.0
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 60,
+    "test_subject": "sub-061",
+    "true": 0,
+    "pred": 1,
+    "score": 0.5248153404925546,
+    "epoch_metrics": {
+      "accuracy": 0.625,
+      "f1_macro": 0.38461538461538464,
+      "sensitivity": 0.0,
+      "specificity": 0.625
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 61,
+    "test_subject": "sub-062",
+    "true": 0,
+    "pred": 1,
+    "score": 0.5743567365767036,
+    "epoch_metrics": {
+      "accuracy": 0.05,
+      "f1_macro": 0.047619047619047616,
+      "sensitivity": 0.0,
+      "specificity": 0.05
+    },
+    "n_patches": 3
+  },
+  {
+    "fold": 62,
+    "test_subject": "sub-063",
+    "true": 0,
+    "pred": 0,
+    "score": 0.48749488387232914,
+    "epoch_metrics": {
+      "accuracy": 0.4875,
+      "f1_macro": 0.3277310924369748,
+      "sensitivity": 0.0,
+      "specificity": 0.4875
+    },
+    "n_patches": 5
+  },
+  {
+    "fold": 63,
+    "test_subject": "sub-064",
+    "true": 0,
+    "pred": 1,
+    "score": 0.560730239525915,
+    "epoch_metrics": {
+      "accuracy": 0.025,
+      "f1_macro": 0.024390243902439025,
+      "sensitivity": 0.0,
+      "specificity": 0.025
+    },
+    "n_patches": 4
+  },
+  {
+    "fold": 64,
+    "test_subject": "sub-065",
+    "true": 0,
+    "pred": 1,
+    "score": 0.5388790254658268,
+    "epoch_metrics": {
+      "accuracy": 0.4375,
+      "f1_macro": 0.30434782608695654,
+      "sensitivity": 0.0,
+      "specificity": 0.4375
+    },
+    "n_patches": 5
+  }
+]
