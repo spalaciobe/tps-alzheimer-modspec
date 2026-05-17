@@ -98,6 +98,8 @@ def main() -> None:
     for fold_idx, (test_path, train_paths) in enumerate(tqdm(splits, desc="LOSO")):
         if test_path.stem in done_subjects:
             continue
+        # Heartbeat a stdout (Colab/CI ven actividad)
+        print(f"[fold {fold_idx:02d}/{len(splits)}] start test={test_path.stem}", flush=True)
         train_paths_only, val_paths = hold_out_val(
             train_paths, bank.subject_to_label, args.seed + fold_idx
         )
@@ -195,6 +197,9 @@ def main() -> None:
             f"pred={subj_pred['y_pred'][0]} score={subj_pred['y_score'][0]:.3f} "
             f"epoch_acc={epoch_metrics['accuracy']:.3f} train={train_dt:.1f}s"
         )
+        # Heartbeat fin de fold a stdout
+        print(f"[fold {fold_idx:02d}/{len(splits)}] done train={train_dt:.0f}s "
+              f"pred={subj_pred['y_pred'][0]} true={subj_pred['y_true'][0]}", flush=True)
 
     out_json = results_dir / "fold_results.json"
     out_json.write_text(json.dumps(fold_results, indent=2))
