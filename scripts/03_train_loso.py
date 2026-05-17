@@ -7,6 +7,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import time
 from pathlib import Path
@@ -205,6 +206,13 @@ def main() -> None:
         # Heartbeat fin de fold a stdout
         print(f"[fold {fold_idx:02d}/{len(splits)}] done train={train_dt:.0f}s "
               f"pred={subj_pred['y_pred'][0]} true={subj_pred['y_true'][0]}", flush=True)
+
+        # Liberación explícita de RAM/VRAM entre folds (crítico en Colab/Kaggle)
+        del train_ds, val_ds, test_ds, train_loader, val_loader, test_loader
+        del model, stats
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        gc.collect()
 
     out_json = results_dir / "fold_results.json"
     out_json.write_text(json.dumps(fold_results, indent=2))

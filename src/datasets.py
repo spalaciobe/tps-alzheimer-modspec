@@ -88,8 +88,9 @@ class IndexedDataset(Dataset):
                 kept.extend(pos.tolist())
             idx = np.array(sorted(kept))
 
-        # Promote a float32 SOLO el subset usado por este fold (no el bank entero)
-        X = bank.X[idx].astype(np.float32, copy=False)
+        # Mantener el subset en el dtype del bank (fp16 o fp32) para no duplicar RAM.
+        # Los stats se computan en float64 para precisión y se aplican via broadcast.
+        X = bank.X[idx]
         if stats is None:
             stats = fit_channel_zscore(X)
         self.stats = stats
@@ -101,7 +102,8 @@ class IndexedDataset(Dataset):
         return self.X.shape[0]
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor, str]:
-        x = torch.from_numpy(self.X[idx])
+        # Convertir el sample individual a float32 (96 KB, despreciable vs el batch entero)
+        x = torch.from_numpy(np.ascontiguousarray(self.X[idx])).float()
         y = torch.tensor(int(self.y[idx]), dtype=torch.long)
         return x, y, str(self.subject_ids[idx])
 
