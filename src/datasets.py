@@ -23,6 +23,7 @@ class SubjectBank:
 
     Atributos:
         X: (N_total, n_ch, F, M) — todos los epochs concatenados.
+            Soporta float16 (mitad de RAM, ~3 GB) o float32.
         y: (N_total,) — etiqueta por epoch.
         subject_ids: (N_total,) — sub-XXX por epoch.
         subject_to_label: dict subject_id → etiqueta entera.
@@ -35,14 +36,18 @@ class SubjectBank:
     subject_paths: list[Path]
 
     @classmethod
-    def from_paths(cls, h5_paths: list[Path]) -> "SubjectBank":
+    def from_paths(cls, h5_paths: list[Path], dtype=np.float32) -> "SubjectBank":
+        """Carga todos los modspec. `dtype=np.float16` ahorra ~50% RAM
+        (útil en Colab Free 12 GB). El z-score y forward del modelo
+        convierten back a float32 al usar."""
         Xs, ys, sids = [], [], []
         sub_to_label: dict[str, int] = {}
         for p in h5_paths:
             data = load_subject(p)
-            Xs.append(data["X"].astype(np.float32))
-            ys.append(np.full(data["X"].shape[0], int(data["y"]), dtype=np.int64))
-            sids.append(np.full(data["X"].shape[0], p.stem, dtype=object))
+            X = data["X"]
+            Xs.append(X.astype(dtype, copy=False))
+            ys.append(np.full(X.shape[0], int(data["y"]), dtype=np.int64))
+            sids.append(np.full(X.shape[0], p.stem, dtype=object))
             sub_to_label[p.stem] = int(data["y"])
         return cls(
             X=np.concatenate(Xs, axis=0),
@@ -83,7 +88,8 @@ class IndexedDataset(Dataset):
                 kept.extend(pos.tolist())
             idx = np.array(sorted(kept))
 
-        X = bank.X[idx]
+        # Promote a float32 SOLO el subset usado por este fold (no el bank entero)
+        X = bank.X[idx].astype(np.float32, copy=False)
         if stats is None:
             stats = fit_channel_zscore(X)
         self.stats = stats

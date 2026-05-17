@@ -1,0 +1,33 @@
+{
+  "n_subjects": 65,
+  "classifier": "svm",
+  "fs": 200,
+  "stft": {
+    "accuracy": 0.7692307692307693,
+    "ci95": [
+      0.6461538461538462,
+      0.8615384615384616
+    ]
+  },
+  "cwt": {
+    "accuracy": 0.6923076923076923,
+    "ci95": [
+      0.5846153846153846,
+      0.8
+    ]
+  },
+  "wilcoxon_score": {
+    "statistic": 1065.0,
+    "pvalue": 0.9609097179332542,
+    "rank_biserial": -0.0060791927281596035,
+    "median_diff": 0.0036139921749679393,
+    "n_paired": 65
+  },
+  "wilcoxon_correct": {
+    "statistic": 154.0,
+    "pvalue": 0.3359238131517357,
+    "rank_biserial": -0.16182646250098204,
+    "median_diff": 0.0,
+    "n_paired": 27
+  }
+}

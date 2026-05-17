@@ -38,6 +38,8 @@ def main() -> None:
                         help="Perfil acelerado (batch=32, epochs=10, subsample=100)")
     parser.add_argument("--run-tag", default="",
                         help="Sufijo (ej. 'v2') para directorios paralelos")
+    parser.add_argument("--fp16-bank", action="store_true",
+                        help="Cargar SubjectBank en float16 (mitad de RAM, ideal Colab Free)")
     args = parser.parse_args()
     set_seed(args.seed)
     logger = get_logger("train_loso")
@@ -56,11 +58,14 @@ def main() -> None:
 
     # Precarga TODOS los sujetos a RAM una sola vez
     t0 = time.perf_counter()
-    bank = SubjectBank.from_paths(h5_paths)
+    bank_dtype = np.float16 if args.fp16_bank else np.float32
+    bank = SubjectBank.from_paths(h5_paths, dtype=bank_dtype)
     logger.info(
         f"SubjectBank cargado en {time.perf_counter()-t0:.1f}s — "
-        f"X.shape={bank.X.shape} ({bank.X.nbytes/1e9:.2f} GB)"
+        f"X.shape={bank.X.shape} dtype={bank.X.dtype} ({bank.X.nbytes/1e9:.2f} GB)"
     )
+    print(f"BANK_LOADED shape={bank.X.shape} dtype={bank.X.dtype} "
+          f"size={bank.X.nbytes/1e9:.2f}GB time={time.perf_counter()-t0:.1f}s", flush=True)
 
     # Perfil quick
     train_overrides: dict = {}

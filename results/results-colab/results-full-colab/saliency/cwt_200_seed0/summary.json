@@ -1,0 +1,7 @@
+{
+  "saliency_method": "gradcam",
+  "grid_search": false,
+  "n_folds_processed": 0,
+  "max_subjects_per_fold": 20,
+  "per_fold": []
+}
