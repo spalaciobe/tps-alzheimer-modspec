@@ -27,6 +27,15 @@ def fit_channel_zscore(X: np.ndarray, eps: float = 1e-8) -> ChannelStats:
 
 
 def apply_channel_zscore(X: np.ndarray, stats: ChannelStats) -> np.ndarray:
-    mean = stats.mean[None, :, None, None]
-    std = stats.std[None, :, None, None]
-    return ((X - mean) / std).astype(np.float32)
+    """Z-score por canal. In-place chunked para evitar OOM en arrays grandes."""
+    mean = stats.mean[None, :, None, None].astype(np.float32)
+    std = stats.std[None, :, None, None].astype(np.float32)
+    if X.dtype != np.float32:
+        X = X.astype(np.float32)
+    else:
+        X = X.copy() if not X.flags.writeable else X
+    chunk = 2048
+    for i in range(0, X.shape[0], chunk):
+        X[i:i+chunk] -= mean
+        X[i:i+chunk] /= std
+    return X
