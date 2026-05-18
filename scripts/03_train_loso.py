@@ -19,7 +19,14 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from src.cache import load_subject
-from src.datasets import IndexedDataset, SubjectBank, hold_out_val, loso_splits
+from src.datasets import (
+    IndexedDataset,
+    ModSpecConcatDataset,
+    ModSpecSubjectDataset,
+    SubjectBank,
+    hold_out_val,
+    loso_splits,
+)
 from src.evaluate import compute_metrics, predict_per_subject
 from src.models.cnn import ModSpecCNN
 from src.train import TrainConfig, train_cnn
@@ -41,6 +48,9 @@ def main() -> None:
                         help="Sufijo (ej. 'v2') para directorios paralelos")
     parser.add_argument("--fp16-bank", action="store_true",
                         help="Cargar SubjectBank en float16 (mitad de RAM, ideal Colab Free)")
+    parser.add_argument("--no-bank", action="store_true",
+                        help="NO usar SubjectBank pre-cargado. Cada fold lee sus "
+                             "HDF5 del disco (RAM constante ~2-3 GB, ~10s extra/fold)")
     args = parser.parse_args()
     set_seed(args.seed)
     logger = get_logger("train_loso")
@@ -57,16 +67,24 @@ def main() -> None:
     if not h5_paths:
         raise SystemExit(f"No hay HDF5 en {modspec_dir}; corre 02_compute_modspec.py")
 
-    # Precarga TODOS los sujetos a RAM una sola vez
-    t0 = time.perf_counter()
-    bank_dtype = np.float16 if args.fp16_bank else np.float32
-    bank = SubjectBank.from_paths(h5_paths, dtype=bank_dtype)
-    logger.info(
-        f"SubjectBank cargado en {time.perf_counter()-t0:.1f}s — "
-        f"X.shape={bank.X.shape} dtype={bank.X.dtype} ({bank.X.nbytes/1e9:.2f} GB)"
-    )
-    print(f"BANK_LOADED shape={bank.X.shape} dtype={bank.X.dtype} "
-          f"size={bank.X.nbytes/1e9:.2f}GB time={time.perf_counter()-t0:.1f}s", flush=True)
+    # Etiquetas por sujeto (necesarias para hold-out estratificado)
+    labels = {p.stem: load_subject(p)["y"] for p in h5_paths}
+
+    bank = None
+    if not args.no_bank:
+        # Precarga TODOS los sujetos a RAM una sola vez
+        t0 = time.perf_counter()
+        bank_dtype = np.float16 if args.fp16_bank else np.float32
+        bank = SubjectBank.from_paths(h5_paths, dtype=bank_dtype)
+        logger.info(
+            f"SubjectBank cargado en {time.perf_counter()-t0:.1f}s — "
+            f"X.shape={bank.X.shape} dtype={bank.X.dtype} ({bank.X.nbytes/1e9:.2f} GB)"
+        )
+        print(f"BANK_LOADED shape={bank.X.shape} dtype={bank.X.dtype} "
+              f"size={bank.X.nbytes/1e9:.2f}GB time={time.perf_counter()-t0:.1f}s", flush=True)
+    else:
+        logger.info("--no-bank: lectura por fold desde disco (RAM constante ~2-3 GB)")
+        print("NO_BANK_MODE: lectura por fold desde HDF5", flush=True)
 
     # Perfil quick
     train_overrides: dict = {}
@@ -107,26 +125,38 @@ def main() -> None:
         # Heartbeat a stdout (Colab/CI ven actividad)
         print(f"[fold {fold_idx:02d}/{len(splits)}] start test={test_path.stem}", flush=True)
         train_paths_only, val_paths = hold_out_val(
-            train_paths, bank.subject_to_label, args.seed + fold_idx
+            train_paths, labels, args.seed + fold_idx
         )
-        train_sids = [p.stem for p in train_paths_only]
-        val_sids = [p.stem for p in val_paths]
         test_sid = test_path.stem
 
-        train_mask = bank.mask_for_subjects(train_sids)
-        val_mask = bank.mask_for_subjects(val_sids)
-        test_mask = bank.mask_for_subjects([test_sid])
-
-        train_ds = IndexedDataset(
-            bank, train_mask,
-            epochs_per_subject=epochs_per_subject,
-            seed=args.seed + fold_idx,
-        )
-        stats = train_ds.stats
-        val_ds = IndexedDataset(bank, val_mask, stats=stats,
-                                epochs_per_subject=epochs_per_subject,
-                                seed=args.seed + fold_idx)
-        test_ds = IndexedDataset(bank, test_mask, stats=stats)
+        if bank is not None:
+            train_sids = [p.stem for p in train_paths_only]
+            val_sids = [p.stem for p in val_paths]
+            train_mask = bank.mask_for_subjects(train_sids)
+            val_mask = bank.mask_for_subjects(val_sids)
+            test_mask = bank.mask_for_subjects([test_sid])
+            train_ds = IndexedDataset(
+                bank, train_mask,
+                epochs_per_subject=epochs_per_subject,
+                seed=args.seed + fold_idx,
+            )
+            stats = train_ds.stats
+            val_ds = IndexedDataset(bank, val_mask, stats=stats,
+                                    epochs_per_subject=epochs_per_subject,
+                                    seed=args.seed + fold_idx)
+            test_ds = IndexedDataset(bank, test_mask, stats=stats)
+        else:
+            # Lectura por fold desde HDF5 (no bank)
+            train_ds = ModSpecConcatDataset(
+                train_paths_only,
+                epochs_per_subject=epochs_per_subject,
+                seed=args.seed + fold_idx,
+            )
+            stats = train_ds.stats
+            val_ds = ModSpecConcatDataset(val_paths, stats=stats,
+                                          epochs_per_subject=epochs_per_subject,
+                                          seed=args.seed + fold_idx)
+            test_ds = ModSpecSubjectDataset(test_path, stats=stats)
 
         batch_size = train_overrides.get("batch_size", cnn_cfg["train"]["batch_size"])
         pin_mem = bool(cnn_cfg["train"].get("pin_memory", False)) and torch.cuda.is_available()
