@@ -246,7 +246,31 @@ Proporción de píxeles top-10% saliency en cada banda canónica (media entre se
 
 Las otras configuraciones (incluyendo CWT vainilla) se concentran en bandas beta/gamma altas, que son menos canónicas para EA. Esto explica por qué STFT vainilla tiene la mejor AUC: **aprende información clínicamente conocida**.
 
-### 4.7 Consistencia de patches entre folds (Jaccard)
+### 4.7 Importancia por canal (mejor modelo)
+
+Para el SVM vainilla STFT (mejor configuración), se agregó la importancia ANOVA F-score por canal (suma de potencia + ratios sobre los patches del fold). **Ranking entre seeds (n=3, normalizado a suma=1):**
+
+| Ranking | Canal | Score normalizado | Región |
+|---|---|---|---|
+| 1 | **O2** | 0.110 ± 0.004 | Occipital derecho |
+| 2 | **T5** | 0.110 ± 0.006 | Temporal posterior izquierdo |
+| 3 | **O1** | 0.103 ± 0.005 | Occipital izquierdo |
+| 4 | T6 | 0.074 ± 0.003 | Temporal posterior derecho |
+| 5 | T3 | 0.060 ± 0.015 | Temporal medio izquierdo |
+| ... | ... | ... | ... |
+| 19 | C4 | 0.014 ± 0.004 | Central derecho |
+
+**Interpretación neurofisiológica**: los canales más informativos son **occipitales (O1, O2) y temporales posteriores (T5, T6, T3)**. Esto es coherente con la literatura clínica de EEG-AD:
+
+- **Atenuación del ritmo alpha occipital**: O1/O2 son las regiones con mayor potencia alpha en reposo; su disminución es uno de los biomarcadores más documentados de EA (Fraga 2013).
+- **Atrofia temporal medial**: los lóbulos temporales son los primeros afectados en EA (hipocampo + entorhinal cortex). EEG sobre T3/T5/T6 detecta esos cambios.
+- **Áreas centrales (C3, C4, Cz, T4) menos importantes**: típicamente menos afectadas en fases tempranas.
+
+Este hallazgo es **convergente** con los análisis de bandas canónicas (sección 4.6): STFT vainilla descubre alfa-theta en regiones occipito-temporales. Eso refuerza la validez clínica del modelo.
+
+Figura: `results/figures_multiseed/channel_importance.png`.
+
+### 4.8 Consistencia de patches entre folds (Jaccard)
 
 Jaccard entre máscaras de patches de pares aleatorios de folds (200 pares por configuración):
 
