@@ -293,7 +293,26 @@ Sobre el dataset público ds004504, el SVM vainilla con STFT alcanza **Acc 0.764
 
 **La replicación es exitosa y reproducible** (3 seeds dan SD ≤ 0.022 en AUC).
 
-### 5.4 Limitaciones
+### 5.4 Ensemble multi-seed y análisis estratificado por género
+
+Como hallazgo bonus, al **agregar las 3 semillas con votación por mediana de scores** sobre el SVM vainilla STFT, la accuracy global sube a **0.831** y AUC a **0.900**. Esto sugiere que un ensemble multi-seed sería la forma estándar de reportar el modelo final.
+
+**Análisis estratificado por género** (Fisher exact test sobre clasificación correcta):
+
+| Género | n | AD/HC | Acc | Sens | Spec | AUC |
+|---|---|---|---|---|---|---|
+| Mujer | 35 | 24/11 | 0.771 | 0.833 | 0.636 | 0.852 |
+| Hombre | 30 | 12/18 | **0.900** | 0.917 | 0.889 | **0.940** |
+| Fisher exact F vs M | — | — | **p = 0.201 (NS)** | — | — | — |
+
+El modelo predice mejor en hombres (acc +13 puntos), pero la diferencia **NO es estadísticamente significativa**. Posibles factores:
+
+- En el subconjunto masculino hay más HC que AD (18 vs 12), facilitando la discriminación.
+- El sesgo de género del dataset (más mujeres en AD) no parece traducirse en sesgo del modelo (test NS).
+
+**Implicación**: el modelo es **robusto al sesgo de género detectado en el dataset**, dentro del poder estadístico disponible. Una réplica con dataset balanceado por género reforzaría este hallazgo.
+
+### 5.5 Limitaciones
 
 1. **Sesgo de género** en el dataset (χ² p = 0.039): 67% mujeres en AD vs 38% en HC. Podría sesgar el modelo si hay diferencias EEG por género. Mitigación: análisis estratificado por género (no realizado en este TFM, queda para trabajo futuro).
 2. **Patches inestables entre folds** (Jaccard ≈ 0.05): el "biomarcador descubierto" varía mucho fold-to-fold. Esto es típico de redes pequeñas con poco data — la saliency es ruidosa.
@@ -303,7 +322,7 @@ Sobre el dataset público ds004504, el SVM vainilla con STFT alcanza **Acc 0.764
 6. **Sin validación externa**: solo usamos un dataset público; replicar en otro (e.g., el privado de Cassani) reforzaría las conclusiones.
 7. **Tareas binarias solamente**: el paper original tiene 5 tareas (T1–T5 con AD1/AD2). Este TFM solo replica T2.
 
-### 5.5 Aporte propio
+### 5.6 Aporte propio
 
 Más allá de la replicación, este TFM aporta:
 
