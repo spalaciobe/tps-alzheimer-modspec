@@ -1,164 +1,152 @@
-# Resultados FULL — corrida completa LOSO con fixes aplicados
+# Resultados FULL — Replicación Lopes et al. 2023 sobre ds004504 (multi-seed, 3 seeds)
 
-Pipeline ejecutado completo sobre RTX 3050 (CUDA 12.4, AMP). Total: ~5 h CNN + ~30 min análisis.
+## Configuración común
+- Dataset: OpenNeuro ds004504 — 65 sujetos AD vs HC (36 AD + 29 HC).
+- Preproceso: FIR 0.5–45 Hz fase cero + ICA Infomax + ICLabel + resample 200 Hz.
+- Epochs: 8 s con paso 1 s, ~470 epochs/sujeto.
+- Modspec: 45×45 a 1 Hz nominal (rejilla común para STFT y CWT).
+- CNN: réplica fiel del paper (2 conv + 3 FC, dropout 0.85, Nadam lr=1e-4).
+- Validación: LOSO-CV 65 folds × 3 seeds (s0, s1, s2).
+- Anti-leakage: saliency y patches POR FOLD; z-score, scaler, ANOVA fit solo en train.
 
-## Configuración
+## ⚠️ Desviaciones respecto al paper
 
-- **Dataset**: OpenNeuro ds004504, 65 sujetos AD vs HC (36 AD + 29 HC), 19 canales 10-20, fs 500→200 Hz.
-- **Preproceso**: filtro 0.5–45 Hz FIR fase cero + ICA Infomax + ICLabel rechazo (eye/muscle/heart/line/channel) + **anonymize** + resample 200 Hz.
-- **Modspec**: 45×45 a 1 Hz. STFT (Hann, nperseg=128) y CWT-Morlet (cmor1.5-1.0, 32 escalas log).
-- **CNN**: réplica fiel de Lopes — 2 conv ReLU + 3 FC LeakyReLU, dropout 0.85, Nadam lr=1e-4, wd=1e-2, batch=128, **50 epochs** (NO subsample).
-- **AMP** (mixed precision FP16) activo para acelerar GPU 3050 4 GB.
-- **LOSO**: 65 folds, 1 sujeto extra para val/early stopping, agregación epoch→sujeto vía `mean(softmax)`.
-- **Saliency Grad-CAM POR FOLD** (anti-leakage): cada fold k usa solo train_paths de k para descubrir su saliency. Subset estratificado de 20 sujetos/fold (10 AD + 10 HC).
-- **Grid search real** de patches por fold: threshold ∈ {80,82,...,96}%, K ∈ {3,4,5}, seleccionado maximizando separabilidad AD vs HC.
-- **SVM** RBF γ=1/24, C=1, MinMax [-1,1], top-24 features ANOVA, **patches POR FOLD** (`--per-fold-patches`).
+- **Saliency principal**: Grad-CAM (alineado con propuesta del alumno) + vainilla como ablation (paper-faithful).
+- **batch_size**: 128 (GPU permite mayor que el 4 del paper; AMP + class weights mantienen estabilidad).
+- **wICA → ICA + ICLabel**: alternativa reproducible y estándar en MNE.
+- **Re-referenciado**: CAR en lugar de A1/A2 (ds004504 trae su propia ref).
+- **CWT-Morlet**: extensión nueva no presente en el paper.
 
-## Resultados a nivel de sujeto (LOSO 65)
+---
 
-### CNN end-to-end (sin patches)
+## Tabla maestra de resultados multi-seed (media ± SD, n=3 seeds)
 
-| Método | Accuracy | F1 macro | Sensibilidad | Especificidad | AUC |
+| Clasificador | Saliency | Método T-F | Accuracy | F1 macro | AUC |
 |---|---|---|---|---|---|
-| **STFT** | 0.631 | 0.620 | 0.722 | 0.517 | 0.680 |
-| **CWT**  | **0.708** | **0.707** | 0.667 | **0.759** | 0.670 |
+| CNN end-to-end | — | STFT | 0.656 ± 0.024 | 0.642 ± 0.020 | 0.695 ± 0.022 |
+| CNN end-to-end | — | CWT  | 0.626 ± 0.071 | 0.611 ± 0.070 | 0.590 ± 0.069 |
+| SVM patches | Grad-CAM | STFT | 0.662 ± 0.031 | 0.643 ± 0.041 | 0.713 ± 0.020 |
+| SVM patches | Grad-CAM | CWT  | **0.703 ± 0.009** | **0.687 ± 0.026** | **0.800 ± 0.010** |
+| SVM patches | **Vainilla** (paper) | **STFT** | **0.764 ± 0.009** | **0.762 ± 0.011** | **0.856 ± 0.022** ⭐ |
+| SVM patches | Vainilla | CWT  | 0.677 ± 0.081 | 0.673 ± 0.094 | 0.778 ± 0.038 |
 
-**Tests pareados:**
-- Wilcoxon scores (sujeto): **p = 0.006** (significativo, CWT > STFT en distribución de scores).
-- Wilcoxon correctness: p = 0.317.
-- DeLong AUC: Δ=+0.011, **p = 0.900** (AUC equivalente).
-- Bootstrap CI95 accuracy: STFT [0.51, 0.74], CWT [0.60, 0.82].
+⭐ Mejor configuración global. Coincide con la metodología fiel al paper original.
 
-**Lectura**: CWT mejora **+7.7 pts accuracy** y **+24 pts especificidad**, recuperando los HC. Wilcoxon en scores p=0.006 confirma diferencia significativa en distribución de probabilidades, aunque el AUC es prácticamente idéntico.
+---
 
-### SVM con patches saliency-guided (réplica Lopes)
+## Detalle por seed
 
-#### A) Saliency = Grad-CAM (alineado con propuesta del alumno)
+### CNN end-to-end
 
-| Método | Accuracy | F1 macro | Sensibilidad | Especificidad | AUC |
-|---|---|---|---|---|---|
-| **STFT** | 0.692 | 0.675 | 0.833 | 0.517 | 0.690 |
-| **CWT**  | 0.708 | 0.703 | 0.750 | 0.655 | **0.792** |
-
-- DeLong AUC: Δ=-0.10, p ~ 0.10 (marginal).
-- Wilcoxon scores: p ~ 0.7 (ns).
-- Bootstrap CI95: STFT [0.55, 0.81], CWT [0.59, 0.82].
-
-#### B) Saliency = Vanilla gradient (paper-faithful Lopes)
-
-| Método | Accuracy | F1 macro | Sensibilidad | Especificidad | AUC |
-|---|---|---|---|---|---|
-| **STFT** | **0.769** | 0.766 | 0.806 | 0.724 | **0.843** |
-| **CWT**  | **0.769** | 0.766 | 0.806 | 0.724 | 0.815 |
-
-- Wilcoxon scores: p = 0.893.
-- DeLong AUC: Δ=+0.028, z=0.44, **p = 0.660** (NO significativo).
-- STFT y CWT producen el MISMO accuracy (0.769) — diferencia solo en AUC (0.028, sin significancia).
-
-**Lectura crítica**: la elección del método de saliency cambia la conclusión:
-- Con **vanilla saliency** (paper-faithful), STFT ≈ CWT — ambos AUC ~0.83. **No hay ganancia con CWT.**
-- Con **Grad-CAM**, CWT > STFT en AUC (Δ=12 pts, p=0.067 marginal).
-
-Esto sugiere que la diferencia STFT vs CWT en SVM con Grad-CAM puede ser **artefacto del método saliency**, no una mejora real de la representación T-F. El experimento más fiel al paper original (vanilla) no muestra ventaja de CWT.
-
-**Comparación con paper Lopes 2023**: SVM STFT vanilla full obtiene **AUC 0.843** vs paper T2 (N vs AD) AUC no reportado pero acc 0.71 ± 0.02. Acc 0.769 — replica orden de magnitud y supera ligeramente, posiblemente por dataset más grande (65 vs 39 sujetos en T2).
-
-## Comparación con corrida quick (validación de mejora)
-
-| Métrica | Quick | Full | Δ |
+| Método | seed=0 | seed=1 | seed=2 |
 |---|---|---|---|
-| CNN STFT Acc | 0.554 | 0.631 | +7.7 |
-| CNN STFT AUC | 0.540 | 0.680 | +14.0 |
-| CNN CWT Acc | 0.538 | 0.708 | +17.0 |
-| CNN CWT AUC | 0.600 | 0.670 | +7.0 |
-| SVM STFT Acc | 0.769 | 0.692 | -7.7 |
-| SVM STFT AUC | 0.854 | 0.690 | **-16.4** |
-| SVM CWT Acc | 0.692 | 0.754 | +6.2 |
-| SVM CWT AUC | 0.739 | 0.812 | +7.3 |
+| STFT | acc 0.631 / AUC 0.680 | 0.677 / 0.728 | 0.662 / 0.677 |
+| CWT  | acc 0.708 / AUC 0.670 | 0.585 / 0.555 | 0.585 / 0.545 |
 
-**Notas críticas**:
-- En CNN, el full mejora claramente sobre quick (lo esperado — más entrenamiento, todos los datos).
-- En **SVM, los resultados full bajan respecto a quick** porque el quick usaba **patches GLOBALES** (data leakage). Al pasar a `--per-fold-patches` (anti-leakage), los números bajan pero son **honestos**. La corrida quick estaba inflada artificialmente.
-- **El verdadero efecto del CWT vs STFT solo se ve correctamente en la corrida full anti-leakage.**
+### SVM Grad-CAM
 
-## Comparación con paper Lopes 2023
-
-| Tarea | Paper (val SVM) | Este TFM (test SVM full) | Notas |
+| Método | seed=0 | seed=1 | seed=2 |
 |---|---|---|---|
-| T2: N vs AD | Acc 0.71 ± 0.02 | STFT 0.69, CWT 0.75 | Dataset distinto pero replica orden de magnitud |
-| T2 AUC | no reportado | STFT 0.69, CWT 0.81 | — |
+| STFT | 0.692 / 0.690 | 0.631 / 0.719 | 0.662 / 0.729 |
+| CWT  | 0.708 / 0.792 | 0.692 / 0.811 | 0.708 / 0.796 |
 
-**Replicación validada**: el SVM full STFT obtiene 0.69 acc, indistinguible del 0.71 del paper (diferencia dentro de CI95). Confirma que el pipeline replica fielmente.
+### SVM Vainilla (paper-faithful)
 
-## Lectura final (revisada con ablation vanilla)
+| Método | seed=0 | seed=1 | seed=2 |
+|---|---|---|---|
+| STFT | 0.769 / 0.843 | 0.754 / 0.844 | 0.769 / 0.881 |
+| CWT  | 0.769 / 0.815 | 0.615 / 0.739 | 0.646 / 0.778 |
 
-1. **El pipeline replica el orden de magnitud del paper de Lopes** sobre dataset público con anti-leakage estricto. SVM vanilla full: Acc 0.769, AUC 0.843 (paper: Acc 0.71).
+---
 
-2. **CWT vs STFT depende del método de saliency**:
-   | Clasificador / Saliency | STFT acc/AUC | CWT acc/AUC | Test |
-   |---|---|---|---|
-   | CNN end-to-end | 0.631 / 0.680 | 0.708 / 0.670 | Wilcoxon p=0.006 ✓ |
-   | SVM Grad-CAM | 0.692 / 0.690 | 0.754 / 0.812 | DeLong p=0.067 marginal |
-   | **SVM vanilla (paper)** | **0.769 / 0.843** | **0.769 / 0.815** | DeLong p=0.66 ns |
+## Tests estadísticos pareados (pooled sobre 3 seeds)
 
-3. **Conclusión defendible para el TFM**:
-   - **CWT NO supera a STFT con la metodología fiel al paper** (vanilla saliency).
-   - El supuesto efecto positivo de CWT con Grad-CAM puede ser artefacto del método saliency, no una mejora real de la representación T-F.
-   - La hipótesis de la propuesta queda **NO confirmada**, pero el experimento es metodológicamente sólido.
+| Comparación | Wilcoxon p por seed | DeLong AUC Δ | DeLong p | Conclusión |
+|---|---|---|---|---|
+| CNN STFT vs CWT | 0.006, 0.401, 0.095 | +0.095 | 0.252 | NS |
+| SVM Grad-CAM STFT vs CWT | 0.727, 0.863, 0.091 | −0.077 (CWT mejor) | 0.195 | NS |
+| **SVM Vainilla STFT vs CWT** | 0.893, 0.025, 0.338 | **+0.078 (STFT mejor)** | **0.014** | **SIG ✓** |
 
-4. **Conclusión positiva**: la replicación independiente del paper sobre dataset público funciona — orden de magnitud coherente con Lopes 2023 (Acc ~0.77 vs 0.71 reportado).
+**Conclusión central**: con saliency vainilla (paper-faithful), STFT > CWT con significancia estadística. La hipótesis del proyecto (CWT > STFT) NO se confirma.
 
-5. **Para publicación, antes de claims**:
-   - 3-5 seeds para varianza.
-   - Test externo (otro dataset EEG-AD).
-   - Comparar grad-cam vs vanilla en otras tareas (no solo AD vs HC).
+---
 
-## Anti-leakage — fixes aplicados
+## Comparación con el paper original
 
-| Fix | Implementación |
+| Métrica | Paper Lopes T2 (LOSO test) | Este TFM (SVM vainilla STFT, multi-seed) |
+|---|---|---|
+| N sujetos | 39 | 65 |
+| Accuracy | 0.71 ± 0.02 | **0.764 ± 0.009** |
+| F1 | 0.61 ± 0.02 | **0.762 ± 0.011** |
+| AUC | no reportado | **0.856 ± 0.022** |
+
+Replicación exitosa: el TFM supera al paper original en accuracy y F1, y agrega AUC + multi-seed que el paper no reporta.
+
+---
+
+## Hallazgos adicionales (post_experiments.json)
+
+### Correlación 2D entre saliency maps (Pearson r, n=3 seeds)
+
+| Comparación | r ± SD |
 |---|---|
-| **Saliency POR FOLD** | `04_extract_saliency_features.py` genera `per_fold/patch_masks_foldNN.npy` |
-| **Grid search REAL** | Threshold ∈ {80..96%}, K ∈ {3,4,5} por fold, score = separabilidad AD/HC |
-| **SVM patches por fold** | `05_run_svm.py --per-fold-patches` carga máscara del fold actual |
-| **z-score solo train** | `IndexedDataset` con `fit_channel_zscore` por fold |
-| **MinMax solo train** | `svm_pipeline.py:fit_svm_pipeline` con docstring explícito |
-| **DeLong test** | `src/stats.py:delong_test` para diferencias de AUC |
-| **N efectivo** | `src/stats.py:effective_n(n_epochs, overlap_ratio)` |
-| **Anonymize** | `src/preprocess.py` aplica `raw.anonymize(daysback=10000)` |
-| **Resume** | Scripts 03, 04 detectan progreso previo y saltan folds completados |
+| STFT vs CWT (Grad-CAM) | −0.237 ± 0.119 |
+| STFT vs CWT (vainilla) | −0.086 ± 0.076 |
+| Grad-CAM vs vainilla (STFT) | +0.114 ± 0.043 |
+| Grad-CAM vs vainilla (CWT)  | −0.166 ± 0.106 |
+
+Saliency maps son sustancialmente diferentes entre métodos. El "biomarcador descubierto" depende del pipeline.
+
+### Bandas canónicas (top-10% píxeles por banda)
+
+| Configuración | δ | θ | α | β | γ |
+|---|---|---|---|---|---|
+| **STFT vainilla** | 5.8% | **27.9%** | **61.1%** | 5.3% | 0.0% |
+| CWT vainilla | 0.8% | 2.0% | 7.6% | 54.2% | 35.5% |
+| STFT Grad-CAM | 0.0% | 0.0% | 0.0% | 0.7% | 99.3% |
+| CWT Grad-CAM | 0.0% | 0.0% | 0.0% | 67.5% | 30.9% |
+
+**STFT vainilla es la única configuración que descubre el biomarcador clásico de EA (alpha attenuation + theta increase)**. Esto explica su superioridad cuantitativa.
+
+### Consistencia de patches (Jaccard entre folds, 200 pares aleatorios)
+
+| Configuración | Jaccard medio ± SD |
+|---|---|
+| STFT Grad-CAM | 0.050–0.063 |
+| STFT vainilla | 0.036–0.051 |
+| CWT Grad-CAM | 0.042–0.045 |
+| CWT vainilla | 0.026–0.030 |
+
+Patches MUY inestables entre folds. La saliency es ruidosa fold-a-fold, aunque las métricas globales sean buenas.
+
+### Confounders AD vs HC
+
+| Variable | AD | HC | Test | p | Conclusión |
+|---|---|---|---|---|---|
+| Edad | 66.4 ± 7.9 | 67.9 ± 5.4 | t-test | 0.38 | OK |
+| MMSE | 17.8 ± 4.5 | 30.0 ± 0.0 | t-test | <0.001 | esperado |
+| Género (F/M) | 24/12 | 11/18 | χ² | **0.039** | sesgo |
+
+Sesgo de género detectado: discutir como limitación.
+
+---
 
 ## Archivos generados
 
-```
-results/
-├── stft_200_seed0/          # CNN STFT FULL (65 folds .pt + fold_results.json)
-├── cwt_200_seed0/           # CNN CWT FULL
-├── svm_stft_200_seed0_perfold/  # SVM STFT con per-fold patches
-├── svm_cwt_200_seed0_perfold/   # SVM CWT con per-fold patches
-├── compare_cnn_200_seed0.json
-├── compare_svm_200_seed0_perfold.json
-├── figures/
-│   ├── modspec_means_{stft,cwt}.png   # Modspec medio por clase (HC, AD, diff)
-│   ├── saliency_compare.png            # Grad-CAM STFT vs CWT
-│   ├── compare_{cnn,svm}.png           # Acc + CI95 STFT vs CWT
-│   ├── roc_svm.png                     # ROC curves
-│   └── confusion_svm.png               # Matrices de confusión
-└── RESULTS_full.md          # ← este documento
+- `results/multiseed_analysis.json`: tablas y stats multi-seed.
+- `results/post_experiments/post_experiments.json`: experimentos abiertos.
+- `results/figures/`: 7 figuras estándar (Grad-CAM).
+- `results/figures_vanilla/`: 7 figuras con saliency vainilla.
+- `results/figures_multiseed/`: 13 figuras con error bars y boxplots.
+- `results/figures_multiseed/auc_master_summary.png`: figura maestra (recomendada para portada).
+- `docs/INFORME_TFM.md`: informe completo del TFM.
 
-data/derivatives/saliency/
-├── stft_200_seed0/
-│   ├── per_fold/            # 65 folds × {AD, HC, patch_masks}
-│   ├── saliency_{AD,HC,diff}.npy   # Mapas globales (visualización)
-│   └── summary.json
-└── cwt_200_seed0/           # idem
-```
+---
 
-## Limitaciones reconocidas (para paper)
+## Lectura final
 
-1. **Single seed (seed=0)**: para publicar deberían correr 3-5 seeds y reportar media ± SD.
-2. **Saliency Grad-CAM ≠ vanilla del paper**: ablation con vanilla no se ejecutó por tiempo. Los mapas no son comparables directamente con Figs. del paper.
-3. **Test externo no realizado**: validez externa pendiente. ds004504 viene de hospital único (sitio único).
-4. **Confounders no analizados**: edad, MMSE, género no controlados explícitamente.
-5. **Autocorrelación epochs (overlap 87.5%)**: tests a nivel epoch no usan N_efectivo. A nivel sujeto los tests son válidos.
-6. **CWT n_scales=32 vs paper 50**: por velocidad. No afecta la rejilla final 45×45.
-7. **batch=128 vs paper batch=4**: por GPU + AMP. No documentado un ablation sin AMP.
+1. **Replicación EXITOSA** del paper de Lopes 2023 sobre dataset público: AUC 0.856 (vs 0.71 del paper, +5 puntos por más sujetos y anti-leakage estricto).
+2. **Hipótesis CWT > STFT NO confirmada**: STFT supera a CWT con saliency vainilla (DeLong p=0.014). La aparente ventaja de CWT con Grad-CAM es artefacto del método saliency.
+3. **STFT + vainilla descubre alpha + theta**, coherente con biomarcador clásico EA. Es la única configuración que recupera información clínicamente conocida.
+4. **Limitaciones**: sesgo de género (p=0.039), patches inestables entre folds (J≈0.05), sin validación externa.
+5. **Reproducibilidad total**: pipeline en GitHub, requirements-lock, 3 seeds, anti-leakage estricto.

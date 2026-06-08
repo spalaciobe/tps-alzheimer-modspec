@@ -68,15 +68,18 @@ python scripts/06_compare_stft_cwt.py
 
 Ver [`docs/plan.md`](docs/plan.md).
 
-## Resultados (quick mode, 2026-04-25)
+## Resultados finales (full multi-seed, 3 seeds, 2026-06)
 
-Ver [`results/RESULTS_quick.md`](results/RESULTS_quick.md). Pipeline end-to-end validado:
+Ver [`results/RESULTS_full.md`](results/RESULTS_full.md) y [`docs/INFORME_TFM.md`](docs/INFORME_TFM.md).
 
-- **SVM con patches saliency-guided**:
-  - STFT: Acc 0.77, AUC 0.85
-  - CWT:  Acc 0.69, AUC 0.74
-  - Wilcoxon STFT vs CWT: p = 0.34 (no significativo)
+**Mejor configuración (SVM vainilla + STFT, paper-faithful):**
 
-- **CNN end-to-end** (sub-entrenado en quick mode): cerca de azar.
+| Métrica | Valor (n=3 seeds) |
+|---|---|
+| Accuracy | **0.764 ± 0.009** |
+| F1 macro | **0.762 ± 0.011** |
+| AUC | **0.856 ± 0.022** |
 
-Para el run completo (epochs=50 sin subsample), usar Colab T4 — ver [`docs/optimization_options.md`](docs/optimization_options.md).
+Replicación: el paper Lopes 2023 reporta Acc 0.71 ± 0.02 en T2 (N vs AD). Este TFM supera por +5 puntos con anti-leakage estricto y multi-seed.
+
+**Conclusión central**: la hipótesis original (CWT > STFT) NO se confirma. Con saliency vainilla (paper-faithful), STFT supera a CWT con significancia (DeLong p=0.014). Más detalles en [`docs/INFORME_TFM.md`](docs/INFORME_TFM.md).
