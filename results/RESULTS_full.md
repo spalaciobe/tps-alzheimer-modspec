@@ -85,6 +85,16 @@ Repitiendo DeLong AUC pareado **dentro de cada seed** (n=65 sujetos cada uno) y 
 - Stouffer: z = 1.55, **p combinado = 0.061**
 - Fisher: χ² = 12.03, **p combinado = 0.061**
 
+**BH-FDR sobre p combinados (3 comparaciones principales):**
+
+| Comparación | p Stouffer | BH-FDR q | Sig. |
+|---|---|---|---|
+| SVM vainilla STFT vs CWT | 0.061 | 0.102 | ✗ |
+| SVM Grad-CAM STFT vs CWT | 0.068 | 0.102 | ✗ |
+| CNN STFT vs CWT | 0.266 | 0.266 | ✗ |
+
+**Ninguna comparación sobrevive BH-FDR α=0.05 bajo la inferencia metodológicamente correcta.**
+
 **Lectura final corregida**:
 
 - DeLong por seed da p = 0.66, 0.05, 0.07 (ninguno significativo individualmente al α=0.05); combinación = **p ≈ 0.061 (NS)**.

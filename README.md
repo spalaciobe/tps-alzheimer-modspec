@@ -18,7 +18,7 @@ Código bajo **MIT License** (ver [`LICENSE`](LICENSE)). Dataset OpenNeuro ds004
 
 ## Objetivo
 
-1. **Replicar** el pipeline de Lopes et al. 2023 (*"Using CNN Saliency Maps and EEG Modulation Spectra for Improved and More Interpretable ML-Based Alzheimer's Disease Diagnosis"*, IEEE TNSRE) sobre el dataset público **OpenNeuro ds004504** (Miltiadous et al. 2023) en clasificación binaria AD vs HC.
+1. **Replicar** el pipeline de Lopes et al. 2023 (*"Using CNN Saliency Maps and EEG Modulation Spectra for Improved and More Interpretable Machine Learning-Based Alzheimer's Disease Diagnosis"*, Computational Intelligence and Neuroscience 2023, art. 3198066, DOI 10.1155/2023/3198066) sobre el dataset público **OpenNeuro ds004504** (Miltiadous et al. 2023) en clasificación binaria AD vs HC.
 2. **Comparar STFT vs CWT-Morlet** como etapa de descomposición tiempo-frecuencia para construir el modulation spectrum.
 
 ## Setup

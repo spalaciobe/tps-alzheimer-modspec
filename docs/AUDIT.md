@@ -141,7 +141,7 @@ Consolidación de 6 auditorías especializadas (fidelidad al paper, calidad de c
 | **EMBC 2026** | 🟢 Cerca, factible | LOSO full + 3-5 seeds + tabla confounders + figuras paper-ready |
 | **EUSIPCO 2026** | 🟢 Buen fit (DSP angle) | Igual + más énfasis CWT vs STFT |
 | **ICASSP 2027** | 🟡 Posible | Añadir baseline ViT/Transformer comparison |
-| **IEEE TNSRE** (donde está Lopes) | 🟡 Exigente | Test set externo + Leave-Site-Out |
+| **Computational Intelligence and Neuroscience** (donde está Lopes 2023) | 🟢 Buen fit | Igual nivel de rigor que el original |
 | **JBHI** | 🟢 Aceptable a negative results | Análisis confounders + DeLong + 5 seeds |
 | **Frontiers Aging Neuroscience** | 🟢 Más accesible | Mismas mejoras, IF más bajo |
 
@@ -244,6 +244,6 @@ Consolidación de 6 auditorías especializadas (fidelidad al paper, calidad de c
 **Camino realista**:
 - TFM y defensa: ✅ listo con fixes ola 1 + LOSO full.
 - Conference paper EMBC/EUSIPCO 2026: 🟡 factible con olas 1+2 + 1 mes redacción.
-- Journal IEEE TNSRE/JBHI: 🟡 requiere ola 3 (test externo o sito-cross-validation).
+- Journal Computational Intelligence and Neuroscience / JBHI: 🟡 requiere ola 3 (test externo o site-cross-validation).
 
 El proyecto es **honest, replicable y publicable como replication study con extensión técnica**. No es un "breakthrough" pero aporta valor a la comunidad EEG-AD por validación independiente sobre datos públicos.

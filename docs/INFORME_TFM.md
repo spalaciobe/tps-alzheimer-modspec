@@ -10,7 +10,7 @@
 
 ## Resumen ejecutivo
 
-Este trabajo replica de forma independiente el pipeline de Lopes et al. (2023) [*Using CNN Saliency Maps and EEG Modulation Spectra for Improved and More Interpretable ML-Based Alzheimer's Disease Diagnosis*, IEEE TNSRE] sobre el dataset público **OpenNeuro ds004504** (Miltiadous 2023), y extiende el análisis comparando **STFT vs CWT-Morlet** como etapa de descomposición tiempo-frecuencia.
+Este trabajo replica de forma independiente el pipeline de Lopes et al. (2023) [*Using CNN Saliency Maps and EEG Modulation Spectra for Improved and More Interpretable Machine Learning-Based Alzheimer's Disease Diagnosis*, Computational Intelligence and Neuroscience 2023, art. 3198066; DOI: 10.1155/2023/3198066] sobre el dataset público **OpenNeuro ds004504** (Miltiadous 2023), y extiende el análisis comparando **STFT vs CWT-Morlet** como etapa de descomposición tiempo-frecuencia.
 
 **Resultados principales (LOSO-CV 65 sujetos, 3 seeds):**
 
@@ -26,7 +26,7 @@ Este trabajo replica de forma independiente el pipeline de Lopes et al. (2023) [
 **Conclusiones clave (con matices estadísticos explícitos):**
 
 1. **La replicación independiente del pipeline funciona**: SVM con saliency vainilla y STFT alcanza Acc 0.764 ± 0.009, AUC 0.856 ± 0.022, en el rango del 0.71 ± 0.02 reportado por Lopes (T2: N vs AD). La comparación es orientativa (datasets y poblaciones distintas), no equivalencia estricta.
-2. **La hipótesis original (CWT > STFT) no obtiene evidencia a favor, pero la inversa tampoco**: con saliency vainilla (la configuración más fiel al paper), CWT presenta AUC media menor (0.778 ± 0.038 vs 0.856 ± 0.022) y mayor varianza entre seeds. El "DeLong pooled p=0.014" sobre la mediana entre seeds (ensemble) sobreestima la separación; **DeLong por seed + combinación Stouffer/Fisher da p ≈ 0.061 (NS)**. Lectura conservadora: **no hay evidencia estadísticamente concluyente** en ninguna dirección.
+2. **La hipótesis original (CWT > STFT) no obtiene evidencia a favor, pero la inversa tampoco**: con saliency vainilla (la configuración más fiel al paper), CWT presenta AUC media menor (0.778 ± 0.038 vs 0.856 ± 0.022) y mayor varianza entre seeds. El "DeLong pooled p=0.014" sobre la mediana entre seeds (ensemble) sobreestima la separación; **DeLong por seed + combinación Stouffer/Fisher da p ≈ 0.061 (NS)**, y tras corrección BH-FDR sobre las 3 comparaciones principales **ninguna sobrevive** (q ≥ 0.10). Lectura conservadora: **no hay evidencia estadísticamente concluyente** en ninguna dirección.
 3. **Confound DSP crítico (detectado en revisión externa)**: los ejes de modulación de STFT (Nyquist 1.56 Hz, 13 bins reales interpolados a 45) y CWT (Nyquist 100 Hz, 180 bins subsampleados a 45) NO codifican el mismo contenido espectral. La comparación STFT vs CWT en este TFM está confundida con esta asimetría de DSP, no controlada por diseño (ver §3.3, §5.1, §5.5).
 4. **El método de saliency afecta cualitativamente el ranking**: con Grad-CAM la tendencia se invierte (CWT > STFT en AUC, no significativo, p=0.195). Esto sugiere que las comparaciones STFT vs CWT son sensibles al método de saliency usado; la conclusión "X supera a Y" depende del pipeline completo, no solo de la transformada T-F.
 5. **Análisis exploratorio (post-hoc)**: STFT + vainilla concentra ~89% de saliency en bandas alpha (61%) + theta (28%), coherente con literatura EEG-AD (Fraga 2013). Los canales más informativos son occipito-temporales (O1, O2, T5, T6). Estos hallazgos son post-hoc y deben validarse en otros datasets. **La atribución por banda no se reporta para CWT** porque su eje portador es geomspace y la asignación píxel→banda requeriría rehacer el mapeo (ver §5.5).
@@ -223,15 +223,25 @@ Con Grad-CAM, CWT tiende a ser mejor que STFT, pero la diferencia no alcanza sig
 
 #### 4.3.1 Corrección por múltiples comparaciones (BH-FDR)
 
-Las tres comparaciones principales (CNN, SVM Grad-CAM, SVM vainilla) corregidas por multiplicidad. Aplicando Benjamini-Hochberg con α=0.05 sobre los p-values "pooled":
+Las tres comparaciones principales (CNN, SVM Grad-CAM, SVM vainilla) corregidas por multiplicidad. Reportamos **dos versiones** de BH-FDR α=0.05, ya que el p-value base depende de cómo se agreguen los seeds:
 
-| Comparación | p-value | BH-FDR rank | p-value ajustado | Sig. tras corrección |
-|---|---|---|---|---|
-| SVM vainilla STFT vs CWT (DeLong pooled) | 0.014 | 1 | **0.042** | ✓ marginal |
-| SVM Grad-CAM STFT vs CWT (DeLong pooled) | 0.195 | 2 | 0.293 | ✗ |
-| CNN STFT vs CWT (DeLong pooled) | 0.252 | 3 | 0.252 | ✗ |
+**Versión A — DeLong "pooled" (sub-óptima, ensemble sobre mediana entre seeds)**
 
-Solo la comparación de SVM vainilla sobrevive a BH-FDR con p ajustado = 0.042 (marginal). **Pero ver §4.3.2bis**: este p está calculado sobre el ensemble entre seeds y NO se sostiene cuando se hace DeLong por seed + combinación.
+| Comparación | p (pooled) | BH-FDR q | Sig. tras corrección |
+|---|---|---|---|
+| SVM vainilla STFT vs CWT | 0.014 | **0.042** | ✓ marginal |
+| SVM Grad-CAM STFT vs CWT | 0.195 | 0.293 | ✗ |
+| CNN STFT vs CWT | 0.252 | 0.252 | ✗ |
+
+**Versión B — DeLong por seed + Stouffer combinado (recomendada, ver §4.3.2bis)**
+
+| Comparación | p (Stouffer combined) | BH-FDR q | Sig. tras corrección |
+|---|---|---|---|
+| SVM vainilla STFT vs CWT | 0.061 | 0.102 | ✗ |
+| SVM Grad-CAM STFT vs CWT | 0.068 | 0.102 | ✗ |
+| CNN STFT vs CWT | 0.266 | 0.266 | ✗ |
+
+**Conclusión actualizada**: bajo la inferencia metodológicamente correcta (versión B), **ninguna comparación sobrevive BH-FDR**. La aparente significancia marginal de la versión A (q=0.042 en SVM vainilla) es artefacto del ensemble-de-mediana. La lectura definitiva del estudio es **ausencia de evidencia concluyente para superioridad de cualquier método T-F en este pipeline**.
 
 #### 4.3.2 Wilcoxon por seed individual (consistencia)
 
@@ -453,7 +463,7 @@ Más allá de la replicación, este TFM aporta:
 
 2. **La comparación STFT vs CWT no es concluyente y está confundida por DSP**. Tres caveats independientes:
 
-   - **Inferencia estadística**: con saliency vainilla, AUC media de STFT (0.856 ± 0.022) supera la de CWT (0.778 ± 0.038), pero **DeLong por seed + combinación Stouffer/Fisher da p ≈ 0.061 (NS)**. El "p=0.014 pooled" sobre la mediana entre seeds (ensemble) sobreestima la separación; la inferencia metodológicamente correcta NO alcanza significancia al α=0.05. Ver §4.3.2bis.
+   - **Inferencia estadística**: con saliency vainilla, AUC media de STFT (0.856 ± 0.022) supera la de CWT (0.778 ± 0.038), pero **DeLong por seed + combinación Stouffer/Fisher da p ≈ 0.061 (NS)** y **tras BH-FDR sobre las 3 comparaciones principales ninguna sobrevive (q ≥ 0.10)**. El "p=0.014 pooled" sobre la mediana entre seeds (ensemble) sobreestima la separación; la inferencia metodológicamente correcta NO alcanza significancia al α=0.05. Ver §4.3.1 (versión B) y §4.3.2bis.
    - **Confound DSP del eje de modulación**: STFT (Nyquist 1.56 Hz, 13 bins reales interpolados a 45) y CWT (Nyquist 100 Hz, 180 bins subsampleados a 45) codifican contenido espectral distinto en su eje vertical. La supuesta ventaja de STFT puede deberse en parte a esta asimetría no controlada (ver §3.3, §5.1). Una comparación justa requeriría unificar el `dt` temporal post-T-F.
    - **Sensibilidad a hiperparámetros**: resize 45×45 e hiperparámetros específicos de CWT-Morlet (cmor1.5-1.0, 32 escalas) son configuraciones sin tuning exhaustivo. La hipótesis original "CWT > STFT" no obtiene evidencia, pero **tampoco se prueba la dirección opuesta con rigor estadístico**.
 
@@ -515,7 +525,7 @@ La estructura del pipeline, scripts de orquestación, debugging de leakage en LO
 
 ## 9. Bibliografía
 
-1. **Lopes, M., Cassani, R., Falk, T.H.** (2023). Using CNN saliency maps and EEG modulation spectra for improved and more interpretable machine learning-based Alzheimer's disease diagnosis. *IEEE Trans. Neural Syst. Rehabil. Eng.* **31**, 1310–1319.
+1. **Lopes, M., Cassani, R., Falk, T.H.** (2023). Using CNN saliency maps and EEG modulation spectra for improved and more interpretable machine learning-based Alzheimer's disease diagnosis. *Computational Intelligence and Neuroscience* **2023**, art. 3198066. DOI: 10.1155/2023/3198066. Open access vía Wiley/Hindawi. [Nota: en versiones previas de este informe se citó erróneamente como IEEE TNSRE 31:1310–1319; corregido tras verificación contra el PDF (DOI confirma Hindawi/Wiley CIN).]
 2. **Miltiadous, A. et al.** (2023). A dataset of scalp EEG recordings of Alzheimer's disease, frontotemporal dementia and healthy subjects from routine EEG. *OpenNeuro ds004504* (CC0 1.0).
 3. **Trambaiolli, L.R. et al.** (2011). EEG spectro-temporal modulation energy: A new feature for automated diagnosis of Alzheimer's disease. *IEEE EMBC*, 3828–3831.
 4. **Fraga, F.J. et al.** (2013). Characterizing Alzheimer's disease severity via resting-awake EEG amplitude modulation analysis. *PLoS ONE* **8**(8), e72240.

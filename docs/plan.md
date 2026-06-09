@@ -4,7 +4,7 @@
 
 Sebastián Palacio (UNAL Medellín, curso Tópicos en Procesamiento Digital de Señales, prof. Freddy Bolaños) propone un proyecto de 10 semanas (mar–may 2026) con dos contribuciones articuladas:
 
-1. **Validar de forma independiente** el pipeline de Lopes et al. 2023 (*"Using CNN Saliency Maps and EEG Modulation Spectra for Improved and More Interpretable ML-Based Alzheimer's Disease Diagnosis"*, IEEE TNSRE), que fue desarrollado sobre un dataset privado de 54 sujetos, replicándolo sobre el dataset público **OpenNeuro ds004504** (Miltiadous et al. 2023).
+1. **Validar de forma independiente** el pipeline de Lopes et al. 2023 (*"Using CNN Saliency Maps and EEG Modulation Spectra for Improved and More Interpretable Machine Learning-Based Alzheimer's Disease Diagnosis"*, Computational Intelligence and Neuroscience 2023, art. 3198066, DOI 10.1155/2023/3198066), que fue desarrollado sobre un dataset privado de 54 sujetos, replicándolo sobre el dataset público **OpenNeuro ds004504** (Miltiadous et al. 2023).
 2. **Comparar STFT vs CWT-Morlet** como etapa de descomposición tiempo-frecuencia para construir el modulation spectrum, hipotetizando que la CWT — con mejor resolución frecuencial en bajas frecuencias — captura mejor las modulaciones diagnósticas de Alzheimer.
 
 El estado del repositorio en `D:\Universidad\Maestria\TPS\Proyecto\` es inicial: sólo PDFs y markdowns del paper y la propuesta, sin código, sin entorno, sin dataset descargado.

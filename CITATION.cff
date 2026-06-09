@@ -25,12 +25,11 @@ references:
       - family-names: Falk
         given-names: T. H.
     title: "Using CNN saliency maps and EEG modulation spectra for improved and more interpretable machine learning-based Alzheimer's disease diagnosis"
-    journal: "IEEE Transactions on Neural Systems and Rehabilitation Engineering"
-    volume: 31
-    start: 1310
-    end: 1319
+    journal: "Computational Intelligence and Neuroscience"
+    volume: 2023
+    number: "3198066"
     year: 2023
-    doi: "10.1109/TNSRE.2023.3242076"
+    doi: "10.1155/2023/3198066"
   - type: dataset
     authors:
       - family-names: Miltiadous
