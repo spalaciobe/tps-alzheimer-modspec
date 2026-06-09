@@ -4,18 +4,20 @@
 - Dataset: OpenNeuro ds004504 — 65 sujetos AD vs HC (36 AD + 29 HC).
 - Preproceso: FIR 0.5–45 Hz fase cero + ICA Infomax + ICLabel + resample 200 Hz.
 - Epochs: 8 s con paso 1 s, ~470 epochs/sujeto.
-- Modspec: 45×45 a 1 Hz nominal (rejilla común para STFT y CWT).
-- CNN: réplica fiel del paper (2 conv + 3 FC, dropout 0.85, Nadam lr=1e-4).
+- Modspec: **45×45 tras resize bilinear** (Δf real STFT = 1.5625 Hz a fs=200 Hz, no 1 Hz nominal).
+- CNN: réplica funcional del paper (2 conv + 3 FC, dropout 0.85, Nadam lr=1e-4); batch_size=128 vs 4 del paper.
 - Validación: LOSO-CV 65 folds × 3 seeds (s0, s1, s2).
 - Anti-leakage: saliency y patches POR FOLD; z-score, scaler, ANOVA fit solo en train.
 
 ## ⚠️ Desviaciones respecto al paper
 
-- **Saliency principal**: Grad-CAM (alineado con propuesta del alumno) + vainilla como ablation (paper-faithful).
+- **Saliency principal**: Grad-CAM (alineado con propuesta del alumno) + vainilla como ablation (paper-faithful, configuración usada para conclusiones cuantitativas).
 - **batch_size**: 128 (GPU permite mayor que el 4 del paper; AMP + class weights mantienen estabilidad).
-- **wICA → ICA + ICLabel**: alternativa reproducible y estándar en MNE.
+- **wICA → ICA + ICLabel**: alternativa reproducible y estándar en MNE (Pion-Tonachini 2019).
 - **Re-referenciado**: CAR en lugar de A1/A2 (ds004504 trae su propia ref).
 - **CWT-Morlet**: extensión nueva no presente en el paper.
+- **Grid search de patches**: heurístico (max separabilidad AD vs HC en saliency), no nested CV con SVM en val set; ver limitación en INFORME_TFM §5.5.2.
+- **Resolución STFT real**: 1.5625 Hz (Δf=fs/nperseg con nperseg=128, fs=200), no 1 Hz exacto; el "45×45" sale del resize bilinear posterior, que es interpolación.
 
 ---
 
@@ -59,28 +61,35 @@
 
 ---
 
-## Tests estadísticos pareados (pooled sobre 3 seeds)
+## Tests estadísticos pareados (pooled sobre 3 seeds) con corrección BH-FDR
 
-| Comparación | Wilcoxon p por seed | DeLong AUC Δ | DeLong p | Conclusión |
-|---|---|---|---|---|
-| CNN STFT vs CWT | 0.006, 0.401, 0.095 | +0.095 | 0.252 | NS |
-| SVM Grad-CAM STFT vs CWT | 0.727, 0.863, 0.091 | −0.077 (CWT mejor) | 0.195 | NS |
-| **SVM Vainilla STFT vs CWT** | 0.893, 0.025, 0.338 | **+0.078 (STFT mejor)** | **0.014** | **SIG ✓** |
+| Comparación | Wilcoxon p por seed | DeLong AUC Δ | DeLong p crudo | BH-FDR p ajustado | Sig. tras corrección |
+|---|---|---|---|---|---|
+| **SVM Vainilla STFT vs CWT** | 0.893, 0.025, 0.338 | **+0.078 (STFT mayor)** | **0.014** | **0.042** | ✓ |
+| SVM Grad-CAM STFT vs CWT | 0.727, 0.863, 0.091 | −0.077 (CWT mayor) | 0.195 | 0.293 | ✗ |
+| CNN STFT vs CWT | 0.006, 0.401, 0.095 | +0.095 | 0.252 | 0.252 | ✗ |
 
-**Conclusión central**: con saliency vainilla (paper-faithful), STFT > CWT con significancia estadística. La hipótesis del proyecto (CWT > STFT) NO se confirma.
+**Lectura matizada**:
+
+- Solo SVM vainilla sobrevive a la corrección BH-FDR (3 comparaciones, α=0.05), con p ajustado = 0.042 (marginalmente significativo).
+- El **Wilcoxon por seed es inconsistente** en SVM vainilla (0.893, 0.025, 0.338): solo seed=1 muestra diferencia significativa, perdida tras Bonferroni intra-seed.
+- Conclusión apropiada: **ausencia de evidencia a favor de CWT bajo esta configuración**, no superioridad intrínseca demostrada de STFT.
+- La hipótesis original del proyecto (CWT > STFT) **no obtiene evidencia a favor**, pero tampoco se prueba formalmente lo contrario.
 
 ---
 
 ## Comparación con el paper original
 
-| Métrica | Paper Lopes T2 (LOSO test) | Este TFM (SVM vainilla STFT, multi-seed) |
+| Métrica | Paper Lopes T2 (LOSO test) | Este TFM (SVM vainilla STFT, 3 seeds) |
 |---|---|---|
-| N sujetos | 39 | 65 |
-| Accuracy | 0.71 ± 0.02 | **0.764 ± 0.009** |
-| F1 | 0.61 ± 0.02 | **0.762 ± 0.011** |
-| AUC | no reportado | **0.856 ± 0.022** |
+| N sujetos | 39 (20 N + 19 AD1) | 65 (29 HC + 36 AD) |
+| Population HC | "Normal" (MMSE no especificado) | MMSE 30.0 ± 0.0 (perfecto) |
+| Anti-leakage en patches | No documentado explícitamente | Por fold (estricto) |
+| Accuracy | 0.71 ± 0.02 | 0.764 ± 0.009 |
+| F1 | 0.61 ± 0.02 | 0.762 ± 0.011 |
+| AUC | no reportado | 0.856 ± 0.022 |
 
-Replicación exitosa: el TFM supera al paper original en accuracy y F1, y agrega AUC + multi-seed que el paper no reporta.
+**Lectura**: el pipeline replicado produce métricas **en el mismo rango** sobre datos públicos independientes (~+5 puntos). La comparación numérica directa NO es estricta por las diferencias de población, dataset y procedimientos. Lo defendible es que **el método de Lopes funciona sobre ds004504** — objetivo de una replicación.
 
 ---
 
@@ -143,10 +152,11 @@ Sesgo de género detectado: discutir como limitación.
 
 ---
 
-## Lectura final
+## Lectura final (con matices estadísticos)
 
-1. **Replicación EXITOSA** del paper de Lopes 2023 sobre dataset público: AUC 0.856 (vs 0.71 del paper, +5 puntos por más sujetos y anti-leakage estricto).
-2. **Hipótesis CWT > STFT NO confirmada**: STFT supera a CWT con saliency vainilla (DeLong p=0.014). La aparente ventaja de CWT con Grad-CAM es artefacto del método saliency.
-3. **STFT + vainilla descubre alpha + theta**, coherente con biomarcador clásico EA. Es la única configuración que recupera información clínicamente conocida.
-4. **Limitaciones**: sesgo de género (p=0.039), patches inestables entre folds (J≈0.05), sin validación externa.
-5. **Reproducibilidad total**: pipeline en GitHub, requirements-lock, 3 seeds, anti-leakage estricto.
+1. **Replicación funcional** del pipeline de Lopes 2023 sobre dataset público ds004504: AUC SVM vainilla STFT = 0.856 ± 0.022 vs 0.71 ± 0.02 del paper (orden de magnitud equivalente; comparación numérica orientativa por diferencias de dataset/población).
+2. **Hipótesis original CWT > STFT no obtiene evidencia a favor**: SVM vainilla STFT muestra mejor AUC media (DeLong p crudo=0.014, BH-FDR=0.042), pero Wilcoxon por seed inconsistente (0.893, 0.025, 0.338) → mejor interpretado como **ausencia de evidencia para CWT** bajo esta configuración (resize 45×45 + cmor1.5-1.0), no superioridad intrínseca demostrada de STFT.
+3. **El ranking depende del método de saliency**: con Grad-CAM la tendencia se invierte (CWT > STFT, NS). Las saliency maps de ambos métodos están casi descorrelacionadas (r ≈ -0.09 vainilla, -0.24 Grad-CAM) → posible **complementariedad** (ensemble como hipótesis futura).
+4. **Observaciones exploratorias (post-hoc)**: STFT + vainilla concentra saliency en bandas alpha (61%) + theta (28%) y canales occipito-temporales (O1, O2, T5, T6), coherente con literatura EEG-AD. Es indicio prometedor, no biomarcador validado.
+5. **Limitaciones honestas**: solo 3 seeds; grid search de patches heurístico (no nested CV); resize 45×45 puede favorecer STFT; CWT subexplorada (sin tuning específico); sesgo de género en dataset con poder limitado para descartarlo en el modelo (N≈129/grupo requerido); sin validación externa.
+6. **Reproducibilidad**: pipeline en GitHub público, requirements-lock, 3 seeds, anti-leakage estricto en LOSO + saliency-por-fold, tests unitarios pasando.

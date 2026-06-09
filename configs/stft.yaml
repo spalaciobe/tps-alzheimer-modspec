@@ -1,8 +1,14 @@
 method: stft
-target_shape: [45, 45]      # (F_carrier, F_mod) bins
+target_shape: [45, 45]      # (F_carrier, F_mod) bins tras resize bilinear
 carrier_range_hz: [0.5, 45.0]
 mod_range_hz: [0.0, 22.5]
 window: hann
+# NOTA: nperseg/fs determinan la resolucion frecuencial REAL ANTES del resize:
+#   delta_f = fs / nperseg
+# Con nperseg=128 a fs=200 Hz => delta_f = 1.5625 Hz (no 1 Hz nominal).
+# El "45x45 a 1 Hz" del paper se obtiene mediante el resize bilinear posterior,
+# que es una interpolacion (no aumenta resolucion real). Para 1 Hz exacto a
+# fs=200 Hz se necesitaria nperseg=200 (mas lento).
 nperseg_at_200hz: 128
 noverlap_at_200hz: 64
 nperseg_at_500hz: 320

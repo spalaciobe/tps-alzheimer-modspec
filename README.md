@@ -41,18 +41,47 @@ mamba env create -f environment.yml
 mamba activate tps-alzheimer
 
 # 2. Descargar dataset (~3-4 GB)
-python scripts/00_download_dataset.py
+python scripts/00_download_dataset.py --include-derivatives
 
-# 3. Pipeline completo
+# 3. Pipeline completo (single-seed básico)
 python scripts/01_preprocess_all.py --version paper
 python scripts/02_compute_modspec.py --method stft --fs 200
-python scripts/02_compute_modspec.py --method cwt --fs 200
+python scripts/02_compute_modspec.py --method cwt  --fs 200
 python scripts/03_train_loso.py --method stft --fs 200 --seed 0
-python scripts/03_train_loso.py --method cwt --fs 200 --seed 0
-python scripts/04_extract_saliency_features.py
-python scripts/05_run_svm.py
-python scripts/06_compare_stft_cwt.py
+python scripts/03_train_loso.py --method cwt  --fs 200 --seed 0
+
+# 4. Saliency POR FOLD (anti-leakage) — Grad-CAM y vainilla, ambos métodos T-F
+python scripts/04_extract_saliency_features.py --method stft --fs 200 --seed 0 --grid-search --max-subjects-per-fold 20
+python scripts/04_extract_saliency_features.py --method cwt  --fs 200 --seed 0 --grid-search --max-subjects-per-fold 20
+python scripts/04_extract_saliency_features.py --method stft --fs 200 --seed 0 --grid-search --max-subjects-per-fold 20 --saliency-method vanilla
+python scripts/04_extract_saliency_features.py --method cwt  --fs 200 --seed 0 --grid-search --max-subjects-per-fold 20 --saliency-method vanilla
+
+# 5. SVM con patches por fold (--per-fold-patches es obligatorio para anti-leakage)
+python scripts/05_run_svm.py --method stft --fs 200 --seed 0 --per-fold-patches --epochs-per-subject 80
+python scripts/05_run_svm.py --method cwt  --fs 200 --seed 0 --per-fold-patches --epochs-per-subject 80
+python scripts/05_run_svm.py --method stft --fs 200 --seed 0 --per-fold-patches --epochs-per-subject 80 --saliency-method vanilla
+python scripts/05_run_svm.py --method cwt  --fs 200 --seed 0 --per-fold-patches --epochs-per-subject 80 --saliency-method vanilla
+
+# 6. Comparativas + figuras
+python scripts/06_compare_stft_cwt.py --classifier cnn
+python scripts/06_compare_stft_cwt.py --classifier svm --per-fold
+python scripts/06_compare_stft_cwt.py --classifier svm --per-fold --saliency-method vanilla
+python scripts/07_generate_figures.py --per-fold
+python scripts/07_generate_figures.py --per-fold --saliency-method vanilla
+
+# 7. Multi-seed (opcional, repetir 3-5 con --seed 1 y --seed 2)
+python scripts/08_multiseed_analysis.py   # tabla media ± SD entre seeds + Wilcoxon + DeLong
+python scripts/09_multiseed_figures.py    # figuras con error bars y boxplots
+
+# 8. Experimentos post-análisis (correlación saliency, Jaccard, bandas, confounders, género, canales)
+python scripts/10_post_experiments.py
+python scripts/11_gender_stratified.py
+python scripts/12_channel_importance.py
 ```
+
+> **Importante**: `--per-fold-patches` en el SVM es **obligatorio** para anti-leakage. Sin ese flag, el script lee `patch_masks.npy` global (legacy), lo cual puede introducir leakage al usar patches generados con todos los sujetos.
+
+> **Atajos**: `scripts/run_remaining_v2.sh` encadena todo en serie con resume automático.
 
 ## Estructura
 
@@ -80,6 +109,6 @@ Ver [`results/RESULTS_full.md`](results/RESULTS_full.md) y [`docs/INFORME_TFM.md
 | F1 macro | **0.762 ± 0.011** |
 | AUC | **0.856 ± 0.022** |
 
-Replicación: el paper Lopes 2023 reporta Acc 0.71 ± 0.02 en T2 (N vs AD). Este TFM supera por +5 puntos con anti-leakage estricto y multi-seed.
+Comparación con paper Lopes 2023: el paper reporta Acc 0.71 ± 0.02 en T2 (N vs AD). Este TFM obtiene cifras en el mismo rango (~+5 puntos) sobre datos públicos independientes, lo cual es **el objetivo de una replicación** — no una comparación numérica estricta (datasets y poblaciones diferentes).
 
-**Conclusión central**: la hipótesis original (CWT > STFT) NO se confirma. Con saliency vainilla (paper-faithful), STFT supera a CWT con significancia (DeLong p=0.014). Más detalles en [`docs/INFORME_TFM.md`](docs/INFORME_TFM.md).
+**Conclusión matizada**: la hipótesis original (CWT > STFT) **no obtiene evidencia a favor** bajo esta configuración. SVM vainilla STFT tiene AUC media mayor (DeLong p=0.014, p ajustado BH-FDR=0.042), pero el Wilcoxon por seed es inconsistente (0.893, 0.025, 0.338). Se interpreta como **ausencia de evidencia a favor de CWT**, no como prueba formal de superioridad intrínseca de STFT. Más detalles y limitaciones en [`docs/INFORME_TFM.md`](docs/INFORME_TFM.md).
