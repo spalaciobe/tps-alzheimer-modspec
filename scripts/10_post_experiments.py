@@ -128,8 +128,15 @@ def patches_consistency() -> dict:
 
 def canonical_band_analysis() -> dict:
     """Para cada saliency map agregado, qué fracción de píxeles activos cae
-    en cada banda canónica del eje y (frecuencia portadora)."""
-    print("\n=== 3. Bandas canónicas en saliency ===", flush=True)
+    en cada banda canónica del eje y (frecuencia portadora).
+
+    IMPORTANTE: este análisis SOLO es valido para STFT, cuyo eje portador es
+    lineal (linspace 0.5–45 Hz tras resize). CWT usa escalas geomspace, asi
+    que el mapeo píxel→banda canónica requeriría reconstruir el eje real de
+    portadoras a partir de las escalas, lo cual no se implementó aquí.
+    Por consistencia se reportan únicamente STFT con un mapeo lineal.
+    """
+    print("\n=== 3. Bandas canónicas en saliency (solo STFT — eje lineal) ===", flush=True)
     bands = {
         "delta (0.5-4 Hz)": (0.5, 4),
         "theta (4-8 Hz)": (4, 8),
@@ -137,33 +144,36 @@ def canonical_band_analysis() -> dict:
         "beta (13-30 Hz)": (13, 30),
         "gamma (30-45 Hz)": (30, 45),
     }
-    # El modspec es 45×45, eje y de 0.5 a 45 Hz
+    # STFT: eje portador lineal 0.5..45 Hz tras resize bilinear a 45 bins.
     carrier_freqs = np.linspace(0.5, 45, 45)
-    result = {}
-    for method in ("stft", "cwt"):
-        for sal in ("gradcam", "vanilla"):
-            for s in (0, 1, 2):
-                arr = load_saliency_diff(method, s, sal)
-                if arr is None: continue
-                abs_arr = np.abs(arr)
-                thr = np.percentile(abs_arr, 90)
-                active = abs_arr >= thr
-                band_props = {}
-                for name, (lo, hi) in bands.items():
-                    rows = np.where((carrier_freqs >= lo) & (carrier_freqs < hi))[0]
-                    if len(rows) == 0: continue
-                    prop = float(active[rows].sum() / active.sum()) if active.sum() > 0 else 0.0
-                    band_props[name] = prop
-                result[f"{method}_s{s}_{sal}"] = band_props
+    result = {
+        "_note": "Solo STFT. CWT omitido: su eje portador es geomspace; "
+                 "el mapeo píxel→banda no se implementa aquí.",
+    }
+    # SOLO STFT — ver docstring.
+    for sal in ("gradcam", "vanilla"):
+        for s in (0, 1, 2):
+            arr = load_saliency_diff("stft", s, sal)
+            if arr is None: continue
+            abs_arr = np.abs(arr)
+            thr = np.percentile(abs_arr, 90)
+            active = abs_arr >= thr
+            band_props = {}
+            for name, (lo, hi) in bands.items():
+                rows = np.where((carrier_freqs >= lo) & (carrier_freqs < hi))[0]
+                if len(rows) == 0: continue
+                prop = float(active[rows].sum() / active.sum()) if active.sum() > 0 else 0.0
+                band_props[name] = prop
+            result[f"stft_s{s}_{sal}"] = band_props
     # Print summary
-    print("  Proporción de píxeles top-10% por banda (media entre seeds):")
-    for method in ("stft", "cwt"):
-        for sal in ("gradcam", "vanilla"):
-            keys = [k for k in result if k.startswith(f"{method}_") and k.endswith(f"_{sal}")]
-            if not keys: continue
-            for band in ["delta (0.5-4 Hz)", "theta (4-8 Hz)", "alpha (8-13 Hz)", "beta (13-30 Hz)", "gamma (30-45 Hz)"]:
-                vals = [result[k].get(band, 0) for k in keys]
-                print(f"    {method} {sal} {band}: {np.mean(vals):.2%}")
+    print("  Proporción de píxeles top-10% por banda (media entre seeds, solo STFT):")
+    for sal in ("gradcam", "vanilla"):
+        keys = [k for k in result if k.startswith("stft_") and k.endswith(f"_{sal}")]
+        if not keys: continue
+        for band in ["delta (0.5-4 Hz)", "theta (4-8 Hz)", "alpha (8-13 Hz)",
+                     "beta (13-30 Hz)", "gamma (30-45 Hz)"]:
+            vals = [result[k].get(band, 0) for k in keys]
+            print(f"    stft {sal} {band}: {np.mean(vals):.2%}")
     return result
 
 

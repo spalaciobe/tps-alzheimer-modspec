@@ -26,10 +26,11 @@ Este trabajo replica de forma independiente el pipeline de Lopes et al. (2023) [
 **Conclusiones clave (con matices estadísticos explícitos):**
 
 1. **La replicación independiente del pipeline funciona**: SVM con saliency vainilla y STFT alcanza Acc 0.764 ± 0.009, AUC 0.856 ± 0.022, en el rango del 0.71 ± 0.02 reportado por Lopes (T2: N vs AD). La comparación es orientativa (datasets y poblaciones distintas), no equivalencia estricta.
-2. **La hipótesis original (CWT > STFT) no obtiene evidencia a favor**: con saliency vainilla (la configuración más fiel al paper), CWT presenta AUC media menor (0.778 ± 0.038 vs 0.856 ± 0.022) y mayor varianza entre seeds. DeLong pooled da p = 0.014, **pero el Wilcoxon por seed es inconsistente (0.893, 0.025, 0.338)** y solo se evaluaron 3 seeds — leer como **ausencia de evidencia a favor de CWT**, no como prueba formal de superioridad de STFT.
-3. **El método de saliency afecta cualitativamente el ranking**: con Grad-CAM la tendencia se invierte (CWT > STFT en AUC, no significativo, p=0.195). Esto sugiere que las comparaciones STFT vs CWT son sensibles al método de saliency usado; la conclusión "X supera a Y" depende del pipeline completo, no solo de la transformada T-F.
-4. **Análisis exploratorio (post-hoc)**: STFT + vainilla concentra ~89% de saliency en bandas alpha (61%) + theta (28%), coherente con literatura EEG-AD (Fraga 2013). Los canales más informativos son occipito-temporales (O1, O2, T5, T6). Estos hallazgos son post-hoc y deben validarse en otros datasets.
-5. **Limitaciones reconocidas**: solo 3 seeds (poder estadístico modesto), sin BH-FDR formal sobre las 3 comparaciones principales, grid search de patches heurístico (no nested CV), sesgo de género en el dataset (χ² p=0.039) con poder limitado para descartarlo en el modelo (Cohen h≈0.35, N≈129/grupo requerido), baja consistencia de patches entre folds (Jaccard ≈ 0.05), saliency maps de STFT y CWT casi descorrelacionados (r ≈ -0.2 a -0.09) lo que sugiere también **complementariedad** (ensemble como hipótesis futura).
+2. **La hipótesis original (CWT > STFT) no obtiene evidencia a favor, pero la inversa tampoco**: con saliency vainilla (la configuración más fiel al paper), CWT presenta AUC media menor (0.778 ± 0.038 vs 0.856 ± 0.022) y mayor varianza entre seeds. El "DeLong pooled p=0.014" sobre la mediana entre seeds (ensemble) sobreestima la separación; **DeLong por seed + combinación Stouffer/Fisher da p ≈ 0.061 (NS)**. Lectura conservadora: **no hay evidencia estadísticamente concluyente** en ninguna dirección.
+3. **Confound DSP crítico (detectado en revisión externa)**: los ejes de modulación de STFT (Nyquist 1.56 Hz, 13 bins reales interpolados a 45) y CWT (Nyquist 100 Hz, 180 bins subsampleados a 45) NO codifican el mismo contenido espectral. La comparación STFT vs CWT en este TFM está confundida con esta asimetría de DSP, no controlada por diseño (ver §3.3, §5.1, §5.5).
+4. **El método de saliency afecta cualitativamente el ranking**: con Grad-CAM la tendencia se invierte (CWT > STFT en AUC, no significativo, p=0.195). Esto sugiere que las comparaciones STFT vs CWT son sensibles al método de saliency usado; la conclusión "X supera a Y" depende del pipeline completo, no solo de la transformada T-F.
+5. **Análisis exploratorio (post-hoc)**: STFT + vainilla concentra ~89% de saliency en bandas alpha (61%) + theta (28%), coherente con literatura EEG-AD (Fraga 2013). Los canales más informativos son occipito-temporales (O1, O2, T5, T6). Estos hallazgos son post-hoc y deben validarse en otros datasets. **La atribución por banda no se reporta para CWT** porque su eje portador es geomspace y la asignación píxel→banda requeriría rehacer el mapeo (ver §5.5).
+6. **Limitaciones reconocidas**: solo 3 seeds (poder estadístico modesto), grid search de patches heurístico (no nested CV), resize 45×45 puede favorecer STFT, ejes de modulación incomparables entre métodos, sesgo de género en el dataset (χ² p=0.039) con poder limitado para descartarlo en el modelo (**ausencia de evidencia, no evidencia de ausencia**), baja consistencia de patches entre folds (Jaccard ≈ 0.05), saliency maps de STFT y CWT **estadísticamente ortogonales** (r ≈ −0.09 vainilla, −0.24 Grad-CAM) lo que sugiere también **complementariedad** (ensemble como hipótesis futura).
 
 ---
 
@@ -110,9 +111,25 @@ El pipeline replica el de Lopes et al. con las siguientes etapas:
 - Descarte de los últimos 7 s para evitar leakage entre folds.
 
 ### 3.3 Modulation spectrum
-- **STFT**: ventana Hann, nperseg=128, noverlap=64 a fs=200 Hz. Resolución frecuencial real Δf = fs/nperseg = **1.5625 Hz** (no 1 Hz nominal; ver limitación 5.5.6).
-- **CWT-Morlet** (`cmor1.5-1.0`): 32 escalas en [0.5, 45] Hz logarítmico. Sin cone-of-influence (limitación documentada).
-- Magnitud al cuadrado → FFT temporal → recorte (0.5–45 Hz portadora, 0–22.5 Hz mod) → **resize bilinear a 45×45** (alineación con Lopes para usar la misma arquitectura CNN; limitación: iguala artificialmente resoluciones) → log-power.
+
+- **STFT**: ventana Hann, nperseg=128, noverlap=64 a fs=200 Hz.
+  - Resolución frecuencial portadora real: Δf = fs/nperseg = **1.5625 Hz** (no 1 Hz nominal).
+  - **Frecuencia de muestreo de la envolvente** (eje temporal de la FFT de modulación): dt = noverlap/fs = 64/200 = 0.32 s ⇒ fs_t ≈ 3.125 Hz ⇒ **Nyquist de modulación = 1.5625 Hz** (en un epoch de 8 s genera ~24 frames temporales, ~13 bins de modulación útiles antes del crop a 22.5 Hz).
+- **CWT-Morlet** (`cmor1.5-1.0`, 32 escalas log en [0.5, 45] Hz):
+  - **Frecuencia de muestreo de la envolvente**: 200 Hz (CWT preserva la fs original) ⇒ **Nyquist de modulación = 100 Hz**, ~180 bins disponibles en 0-22.5 Hz.
+- **Procesamiento común**: magnitud al cuadrado → FFT temporal → recorte (0.5-45 Hz portadora, 0-22.5 Hz mod) → **resize bilinear a 45×45** (alineación con la arquitectura CNN de Lopes) → log-power.
+
+> **⚠️ CONFOUND DSP IMPORTANTE — Detectado en revisión externa (no en la implementación inicial)**:
+>
+> Las dos imágenes "45×45" finales **NO representan el mismo rango físico** del eje de modulación:
+> - STFT: 0 a **1.5625 Hz** (interpolado de 13 bins reales a 45 vía bilineal).
+> - CWT: 0 a **22.5 Hz** (subsampled de ~180 bins a 45).
+>
+> Como consecuencia, la comparación cuantitativa STFT vs CWT bajo este pipeline NO es una comparación justa entre transformadas T-F: es una comparación entre **dos representaciones que capturan rangos de modulación drásticamente distintos**. La STFT aquí captura solo modulaciones lentas (alpha/theta envelope dynamics ≤ 1.56 Hz), mientras que CWT incluye modulaciones rápidas (hasta 22.5 Hz).
+>
+> Esto es un **confound más serio que el resize 45×45 per se** y debe interpretarse así: **las conclusiones cuantitativas STFT vs CWT en este informe reflejan un pipeline específico con eje de modulación efectivamente distinto, no una comparación equitativa de las transformadas T-F en sí**. Ver §5.5 (limitación 4) y §6 (conclusiones revisadas).
+>
+> Mitigación correcta para trabajo futuro: decimar la envolvente CWT a la misma tasa de muestreo (3.125 Hz) antes de la FFT temporal, o computar la STFT con hop mucho más fino para igualar el Nyquist.
 
 ### 3.4 CNN — réplica fiel de la arquitectura del paper
 
@@ -200,23 +217,25 @@ Con Grad-CAM, CWT tiende a ser mejor que STFT, pero la diferencia no alcanza sig
 | **STFT** | **0.764 ± 0.009** | **0.762 ± 0.011** | **0.856 ± 0.022** |
 | CWT | 0.677 ± 0.081 | 0.673 ± 0.094 | 0.778 ± 0.038 |
 
-**DeLong pooled (sobre mediana entre seeds, n=65 sujetos)**: AUC STFT − CWT = +0.078, p = 0.014.
+**DeLong "pooled" (sobre mediana entre seeds, ensemble)**: AUC STFT − CWT = +0.078, p = 0.014.
+
+> ⚠️ **Sub-óptimo metodológicamente**: este p-value se calcula sobre la mediana de scores entre 3 seeds (que es un ensemble), no sobre la distribución real por seed. El revisor externo señaló esto como artefacto y la inferencia correcta se reporta en §4.3.2bis. **El titular "p=0.014" debe leerse con esta caveat: corresponde al ensemble, no a la replicación de la diferencia**.
 
 #### 4.3.1 Corrección por múltiples comparaciones (BH-FDR)
 
-Las tres comparaciones principales (CNN, SVM Grad-CAM, SVM vainilla) deben corregirse por multiplicidad. Aplicando Benjamini-Hochberg con α=0.05:
+Las tres comparaciones principales (CNN, SVM Grad-CAM, SVM vainilla) corregidas por multiplicidad. Aplicando Benjamini-Hochberg con α=0.05 sobre los p-values "pooled":
 
 | Comparación | p-value | BH-FDR rank | p-value ajustado | Sig. tras corrección |
 |---|---|---|---|---|
-| SVM vainilla STFT vs CWT (DeLong) | 0.014 | 1 | **0.042** | ✓ |
-| SVM Grad-CAM STFT vs CWT (DeLong) | 0.195 | 2 | 0.293 | ✗ |
-| CNN STFT vs CWT (DeLong) | 0.252 | 3 | 0.252 | ✗ |
+| SVM vainilla STFT vs CWT (DeLong pooled) | 0.014 | 1 | **0.042** | ✓ marginal |
+| SVM Grad-CAM STFT vs CWT (DeLong pooled) | 0.195 | 2 | 0.293 | ✗ |
+| CNN STFT vs CWT (DeLong pooled) | 0.252 | 3 | 0.252 | ✗ |
 
-**Solo la comparación de SVM vainilla sobrevive a la corrección BH-FDR** con p ajustado = 0.042.
+Solo la comparación de SVM vainilla sobrevive a BH-FDR con p ajustado = 0.042 (marginal). **Pero ver §4.3.2bis**: este p está calculado sobre el ensemble entre seeds y NO se sostiene cuando se hace DeLong por seed + combinación.
 
 #### 4.3.2 Wilcoxon por seed individual (consistencia)
 
-El DeLong agregado oculta variabilidad entre semillas. Wilcoxon pareado de scores por sujeto en cada seed individual (SVM vainilla, STFT vs CWT):
+Wilcoxon pareado de scores por sujeto en cada seed individual (SVM vainilla, STFT vs CWT):
 
 | seed | Wilcoxon p |
 |---|---|
@@ -224,7 +243,25 @@ El DeLong agregado oculta variabilidad entre semillas. Wilcoxon pareado de score
 | s1 | 0.025 (sig sin corregir) |
 | s2 | 0.338 (NS) |
 
-**La señal NO es consistente entre semillas**: solo en seed=1 hay diferencia significativa, perdida si se corrige por 3 comparaciones (α=0.0167 Bonferroni). Esto **debilita** la inferencia "STFT > CWT" y refuerza la lectura más prudente: **ausencia de evidencia a favor de CWT bajo esta configuración**, no superioridad demostrada de STFT.
+**Inconsistente entre semillas**: solo en seed=1 hay diferencia significativa, perdida con Bonferroni intra-seed (α=0.0167).
+
+#### 4.3.2bis DeLong por seed + combinación (lectura recomendada por revisión externa)
+
+Repitiendo DeLong AUC pareado **dentro de cada seed por separado** (n=65 sujetos por test) y combinando con Stouffer/Fisher:
+
+| seed | AUC STFT | AUC CWT | Δ AUC | DeLong p |
+|---|---|---|---|---|
+| s0 | 0.843 | 0.815 | +0.028 | 0.660 |
+| s1 | 0.844 | 0.739 | +0.105 | 0.051 |
+| s2 | 0.881 | 0.781 | +0.101 | 0.072 |
+
+**Combinación de p-values entre seeds:**
+- Stouffer: z=1.55, p combinado = **0.061**
+- Fisher: χ²=12.03, p combinado = **0.061**
+
+**Esto es la inferencia metodológicamente correcta**. Con DeLong por seed + combinación, **el resultado es NO significativo (p≈0.06)** al α=0.05, aunque marginal. Esto contrasta con el "p=0.014 pooled" de la mediana-de-seeds que infló la separación.
+
+**Lectura final actualizada**: **no se encuentra evidencia estadísticamente concluyente** de diferencia entre STFT y CWT en este pipeline. El AUC medio mayor de STFT (0.856 vs 0.778) y su menor varianza (±0.022 vs ±0.038) son consistentes con una posible ventaja, pero la inferencia formal con DeLong por seed + combinación no alcanza significancia tras corrección por multiplicidad. La hipótesis original (CWT > STFT) sigue sin obtener evidencia a favor, pero **tampoco se prueba lo contrario con rigor estadístico**.
 
 ### 4.4 Comparación con el paper Lopes 2023
 
@@ -248,7 +285,7 @@ Pearson r entre saliency maps `saliency_diff` (3 seeds, media ± SD):
 | **Grad-CAM vs vainilla** con STFT | +0.114 ± 0.043 |
 | **Grad-CAM vs vainilla** con CWT | -0.166 ± 0.106 |
 
-**Interpretación**: los saliency maps STFT y CWT NO son consistentes — son aproximadamente ortogonales o ligeramente anti-correlated. Lo mismo ocurre entre Grad-CAM y vainilla. Esto demuestra que **"el biomarcador descubierto" depende fuertemente de la elección de pipeline**.
+**Interpretación**: los saliency maps STFT y CWT NO son consistentes — son **estadísticamente ortogonales** (Pearson r ≈ −0.09 vainilla, −0.24 Grad-CAM; ningún p<0.05 para r distinto de 0). Hablar de "anti-correlación" sería sobreinterpretar el signo: las correlaciones son estadísticamente indistinguibles de cero. Lo mismo ocurre entre Grad-CAM y vainilla. Esto demuestra que **"el biomarcador descubierto" depende fuertemente de la elección de pipeline**.
 
 ### 4.6 Análisis por banda canónica (post-hoc, exploratorio)
 
@@ -321,12 +358,13 @@ Jaccard entre máscaras de patches de pares aleatorios de folds (200 pares por c
 
 **Por qué CWT puede estar penalizada en esta implementación, sin que necesariamente sea inferior**:
 
-- El **resize bilinear a 45×45** iguala artificialmente las resoluciones de salida, eliminando parte de la ventaja teórica de CWT en bajas frecuencias.
-- La CWT con `cmor1.5-1.0` y 32 escalas log es **una elección entre muchas posibles** — no exploramos `cmor1-1`, n_scales mayor, ni cone-of-influence.
-- Los hiperparámetros del CNN (Lopes 2023) fueron optimizados para input STFT; CWT puede requerir tuning específico.
-- **Las saliency maps de STFT y CWT están casi descorrelacionadas** (r ≈ -0.09 vainilla, -0.24 Grad-CAM): ambos métodos capturan información distinta. Esto sugiere **complementariedad** — un ensemble STFT+CWT (late fusion o stacking) sería una hipótesis natural a futuro.
+- **🔴 Eje de frecuencia de modulación incomparable (confound DSP detectado en revisión externa)**: STFT (con noverlap=64 a fs=200 Hz) tiene Nyquist de modulación ≈1.56 Hz, mientras que CWT tiene Nyquist 100 Hz. Tras el recorte a 22.5 Hz y resize a 45 bins, **las dos imágenes representan rangos físicos distintos** del eje de modulación (STFT: 0-1.56 Hz interpolado; CWT: 0-22.5 Hz subsampled). Esto es más serio que el resize per se y posiblemente el factor dominante de las diferencias observadas.
+- **Resize bilinear a 45×45**: iguala artificialmente las resoluciones nominales de salida pero, combinado con el desajuste anterior, produce dos representaciones distintas etiquetadas como equivalentes.
+- **CWT con `cmor1.5-1.0` y 32 escalas log**: una elección entre muchas posibles, sin tuning específico ni cone-of-influence.
+- **Hiperparámetros del CNN** (Lopes 2023) fueron optimizados para input STFT; CWT puede requerir tuning específico.
+- **Las saliency maps de STFT y CWT están casi descorrelacionadas** (r ≈ -0.09 vainilla, -0.24 Grad-CAM): no se debe interpretar como "anti-correlación" (r es estadísticamente indistinguible de 0); más bien indica **ortogonalidad/independencia**. Dada la inestabilidad de patches entre folds (Jaccard ≈ 0.05), parte de este r ≈ 0 puede ser puro ruido fold-a-fold, no estructura complementaria real.
 
-**Lectura honesta**: este trabajo muestra que CWT-Morlet, bajo el pipeline específico de Lopes (con resize a 45×45 y saliency vainilla), no presenta ventaja sobre STFT. Generalizar más allá de esa configuración requiere experimentos adicionales.
+**Lectura honesta y revisada**: este trabajo NO sostiene una comparación equitativa entre transformadas T-F en sí mismas, sino entre **dos pipelines específicos** (uno con eje de modulación efectivamente ≤1.56 Hz, otro con eje ≤22.5 Hz). La afirmación defendible es: "bajo el pipeline implementado, CWT no muestra ventaja sobre STFT y es menos estable entre seeds". Cualquier generalización a "CWT-Morlet vs STFT en EEG-AD" requiere igualar los ejes de modulación primero.
 
 ### 5.2 El método de saliency cambia el ranking
 
@@ -358,24 +396,43 @@ Lo defendible es que **el pipeline replicado funciona y produce métricas compat
 | Diferencia | — | — | — | **+0.129** | +0.088 |
 | Fisher exact F vs M | — | — | OR ≈ 0.375 | **p = 0.201** | Cohen h ≈ 0.35 |
 
-**Análisis de poder estadístico**: con un tamaño de efecto Cohen h = 0.35 (moderado), detectar la diferencia observada al 80% de poder y α=0.05 requeriría aproximadamente **N ≈ 129 sujetos por grupo**. El tamaño actual (35F + 30M) tiene poder ~25-30% para esa diferencia.
+**Análisis de poder estadístico**: con un tamaño de efecto Cohen h ≈ 0.35 (moderado), detectar la diferencia observada al 80% de poder y α=0.05 requeriría aproximadamente **N ≈ 64 sujetos por grupo (es decir, ~129 sujetos totales sumando F y M)**, según la fórmula con transformación arcoseno: n/grupo = ((z₁₋α/₂ + z₁₋β)/h)² = ((1.96+0.84)/0.35)² ≈ 64. Nota: en versiones anteriores de este informe se reportaba "129 sujetos por grupo", lo cual confundía total con tamaño por grupo. El tamaño actual (35F + 30M) tiene poder ~25-30% para esa diferencia.
 
 **Lectura prudente**: **no se detectó diferencia significativa entre géneros, pero el poder estadístico es limitado** — la diferencia absoluta de 12.9 puntos en accuracy es relevante en magnitud, y no podemos descartar un sesgo real del modelo. Una validación con dataset balanceado por género o con N mayor sería necesaria antes de afirmar robustez al sesgo.
 
 ### 5.5 Limitaciones
 
-1. **Solo 3 seeds**: el multi-seed reporta varianza pero el número de réplicas es bajo para inferencias estadísticas fuertes (especialmente con Wilcoxon por seed inconsistente).
-2. **Grid search de patches heurístico, no nested CV**: el script real implementa una selección por separabilidad de la saliency map (max contraste AD vs HC sobre los píxeles candidatos), NO una validación con SVM en val set (la función `grid_search_patches()` con SVM en val existe en `src/feature_extraction.py:87-125` pero no es invocada por el pipeline final). Esto introduce un sesgo de selección menor pero existente.
-3. **BH-FDR/Bonferroni aplicado post-hoc en este informe** (sección 4.3.1), no como pre-registro. Solo la comparación SVM vainilla sobrevive a la corrección.
-4. **Resize bilinear** del modspec a 45×45 puede igualar artificialmente las resoluciones de STFT y CWT, perjudicando a CWT cuya ventaja teórica está en la resolución variable.
-5. **CWT subexplorada**: solo `cmor1.5-1.0` con 32 escalas log; sin cone-of-influence; sin tuning específico de hiperparámetros para CWT input.
-6. **Resolución STFT real ≠ nominal**: nperseg=128 a fs=200 Hz da Δf = 1.56 Hz, no 1 Hz exacto (limitación intrínseca de la elección de parámetros, alineada con la del paper).
-7. **CNN sub-entrenada**: dropout 0.85 es muy agresivo. La CNN sola opera apenas mejor que baseline trivial (~0.55). No exploramos dropout más bajo.
-8. **Sin validación externa**: solo un dataset público (ds004504). Replicar en otro (e.g., privado de Cassani 2020) reforzaría las conclusiones.
-9. **Tareas binarias solamente**: el paper original tiene 5 tareas (T1–T5 con AD1/AD2). Este TFM solo replica T2 (AD vs HC).
-10. **Poder estadístico modesto** para sub-análisis (género N=65, banda 65 sujetos, canales 65 sujetos × 3 seeds).
-11. **Saliency unstable fold-to-fold** (Jaccard ≈ 0.05): los "biomarcadores descubiertos" varían entre folds, lo que dificulta hablar de un descubrimiento estable.
-12. **Análisis post-hoc** (bandas canónicas, importancia por canal) no estaban pre-registrados; deben verse como exploratorios.
+1. **Solo 3 seeds**: el multi-seed reporta varianza pero el número de réplicas es bajo para inferencias estadísticas fuertes (especialmente con Wilcoxon por seed inconsistente). Idealmente ≥10 seeds.
+
+2. **Grid search de patches heurístico, no nested CV**: el script real (`scripts/04_extract_saliency_features.py:209-240`) implementa una selección por separabilidad de la saliency map (max contraste AD vs HC sobre los píxeles candidatos), NO una validación con SVM en val set. La función `grid_search_patches()` con validación SVM existe en `src/feature_extraction.py:87-125` pero **no es invocada por el pipeline final**. Esto introduce un sesgo de selección menor pero existente y constituye una desviación de fidelidad respecto al paper.
+
+3. **BH-FDR/Bonferroni post-hoc**: la corrección se aplicó después de ver los resultados (sección 4.3.1), no como pre-registro. Solo la comparación SVM vainilla sobrevive (p ajustado=0.042 marginal).
+
+4. **🔴 Eje de frecuencia de modulación incomparable entre STFT y CWT** (confound DSP detectado en revisión externa, no identificado en la implementación inicial): con los parámetros del pipeline (STFT noverlap=64, CWT preserva fs=200 Hz), las imágenes 45×45 finales representan rangos físicos drásticamente distintos del eje de modulación — STFT efectivamente 0-1.56 Hz interpolado, CWT 0-22.5 Hz subsampled. Esta es probablemente la limitación DSP más seria del trabajo. Las conclusiones STFT vs CWT cuantitativas reflejan este artefacto del pipeline, no una comparación equitativa de las transformadas T-F en sí mismas. Solución correcta para trabajo futuro: decimar la envolvente CWT a la tasa de muestreo de la envolvente STFT antes de la FFT de modulación.
+
+5. **Resize bilinear** del modspec a 45×45 oculta el desajuste anterior y puede penalizar artificialmente a CWT cuya ventaja teórica está en la resolución variable.
+
+6. **CWT subexplorada**: solo `cmor1.5-1.0` con 32 escalas log; sin cone-of-influence; sin tuning específico de hiperparámetros para CWT input. Atenuante: la T-F se computa sobre la señal completa antes de rebanar epochs, evitando edge effects en bordes de epoch, pero el soporte temporal del wavelet a 0.5 Hz se extiende a varios segundos y puede contaminar epochs vecinos en bajas frecuencias.
+
+7. **Resolución STFT real ≠ nominal**: nperseg=128 a fs=200 Hz da Δf = 1.5625 Hz, no 1 Hz exacto. El "45×45 a 1 Hz" del paper se obtiene mediante el resize bilinear posterior, que es interpolación.
+
+8. **DeLong sobre mediana entre seeds (no por seed)**: el p=0.014 reportado en §4.3 proviene de calcular DeLong sobre el ensemble (mediana de scores entre 3 seeds), no sobre la distribución real por seed. Esto **infla la separación aparente** porque la mediana reduce ruido entre seeds. La inferencia correcta sería DeLong por seed + combinación (Fisher o Stouffer), o un modelo de efectos mixtos. El Wilcoxon por seed que sí está reportado (0.893, 0.025, 0.338) muestra la inconsistencia real.
+
+9. **CNN sub-entrenada**: dropout 0.85 es muy agresivo. La CNN sola opera apenas mejor que baseline trivial (~0.55). No exploramos dropout más bajo.
+
+10. **Sin validación externa**: solo un dataset público (ds004504). Replicar en otro (e.g., privado de Cassani 2020) reforzaría las conclusiones.
+
+11. **Tareas binarias solamente**: el paper original tiene 5 tareas (T1–T5 con AD1/AD2). Este TFM solo replica T2 (AD vs HC).
+
+12. **Poder estadístico modesto** para sub-análisis: género N=65 con potencia ~25-30% para detectar h≈0.35; bandas y canales evaluados sobre 65 sujetos × 3 seeds. Importante distinción: la afirmación "modelo robusto al sesgo de género" implícita en algunos scripts auxiliares **NO está sustentada estadísticamente**; la lectura correcta es "ausencia de evidencia, no evidencia de ausencia".
+
+13. **Saliency unstable fold-to-fold** (Jaccard ≈ 0.05): los "biomarcadores descubiertos" varían mucho entre folds, lo que dificulta hablar de un descubrimiento estable. Parte de las correlaciones cercanas a 0 entre saliency maps STFT↔CWT puede ser puro ruido fold-a-fold.
+
+14. **Atribución de bandas canónicas para CWT sesgada**: el eje portador de la CWT es log-espaciado (`geomspace`), pero el análisis de bandas en `scripts/10_post_experiments.py` asumía un eje lineal. Esto sesga la tabla 4.6 para las filas de CWT; la atribución para STFT (eje lineal nativo) es aproximadamente válida. **El análisis por bandas debe interpretarse solo para STFT** (corregido en el script y la tabla; ver §4.6).
+
+15. **N efectivo por autocorrelación de epochs**: el overlap 87.5% entre epochs intra-sujeto NO afecta los tests reportados porque todas las inferencias finales son a nivel de sujeto (n=65 scores agregados por sujeto). La función `effective_n()` existe en `src/stats.py` pero no se necesita en este pipeline. *Aclaración añadida en respuesta a revisión externa.*
+
+16. **Análisis post-hoc** (bandas canónicas, importancia por canal, correlaciones, género) no estaban pre-registrados; deben verse como exploratorios.
 
 ### 5.6 Aporte propio
 
@@ -394,9 +451,13 @@ Más allá de la replicación, este TFM aporta:
 
 1. **El pipeline de Lopes et al. 2023 fue replicado funcionalmente** sobre el dataset público ds004504. SVM con saliency vainilla y STFT alcanza Acc = 0.764 ± 0.009, AUC = 0.856 ± 0.022 (3 seeds), en el orden de magnitud del 0.71 ± 0.02 reportado por Lopes en T2. Las diferencias de datasets, poblaciones y detalles de anti-leakage impiden una comparación numérica estricta; lo defendible es que el pipeline funciona sobre datos públicos independientes.
 
-2. **La hipótesis original "CWT supera a STFT" no obtiene evidencia a favor**: con saliency vainilla (paper-faithful), CWT presenta AUC media menor (0.778 ± 0.038 vs 0.856 ± 0.022). DeLong pooled da p = 0.014, p ajustado BH-FDR = 0.042; sin embargo, el Wilcoxon por seed es inconsistente (0.893, 0.025, 0.338). Esto debe leerse como **ausencia de evidencia a favor de CWT bajo esta configuración**, no como prueba formal de inferioridad intrínseca. La elección de resize 45×45 y los hiperparámetros específicos de CWT-Morlet (cmor1.5-1.0, 32 escalas) son posibles confounds.
+2. **La comparación STFT vs CWT no es concluyente y está confundida por DSP**. Tres caveats independientes:
 
-3. **El ranking STFT vs CWT depende del método de saliency**: con Grad-CAM la tendencia se invierte (CWT > STFT, NS). Las saliency maps de STFT y CWT están casi descorrelacionadas (r ≈ -0.09 vainilla), lo que sugiere que pueden capturar información **complementaria** — un ensemble (late fusion o stacking) es una hipótesis natural a futuro.
+   - **Inferencia estadística**: con saliency vainilla, AUC media de STFT (0.856 ± 0.022) supera la de CWT (0.778 ± 0.038), pero **DeLong por seed + combinación Stouffer/Fisher da p ≈ 0.061 (NS)**. El "p=0.014 pooled" sobre la mediana entre seeds (ensemble) sobreestima la separación; la inferencia metodológicamente correcta NO alcanza significancia al α=0.05. Ver §4.3.2bis.
+   - **Confound DSP del eje de modulación**: STFT (Nyquist 1.56 Hz, 13 bins reales interpolados a 45) y CWT (Nyquist 100 Hz, 180 bins subsampleados a 45) codifican contenido espectral distinto en su eje vertical. La supuesta ventaja de STFT puede deberse en parte a esta asimetría no controlada (ver §3.3, §5.1). Una comparación justa requeriría unificar el `dt` temporal post-T-F.
+   - **Sensibilidad a hiperparámetros**: resize 45×45 e hiperparámetros específicos de CWT-Morlet (cmor1.5-1.0, 32 escalas) son configuraciones sin tuning exhaustivo. La hipótesis original "CWT > STFT" no obtiene evidencia, pero **tampoco se prueba la dirección opuesta con rigor estadístico**.
+
+3. **El ranking STFT vs CWT depende del método de saliency**: con Grad-CAM la tendencia se invierte (CWT > STFT, NS). Las saliency maps de STFT y CWT son **estadísticamente ortogonales** (r ≈ −0.09 vainilla, sin Pearson p<0.05), lo que sugiere que pueden capturar información **complementaria** — un ensemble (late fusion o stacking) es una hipótesis natural a futuro.
 
 4. **Observaciones exploratorias (post-hoc)**: STFT + vainilla concentra saliency en bandas alpha (61%) + theta (28%) y canales occipito-temporales (O1, O2, T5, T6), coherente con biomarcadores clásicos de EA (Fraga 2013). Esta convergencia con la literatura clínica es prometedora pero requiere validación en datasets independientes.
 
@@ -407,14 +468,15 @@ Más allá de la replicación, este TFM aporta:
    - El poder estadístico debe acompañar siempre las afirmaciones de "ausencia de efecto" (e.g., análisis por género).
 
 6. **Recomendaciones para trabajos futuros**:
-   - **Ensemble STFT+CWT** (late fusion) explotando complementariedad observada.
+   - **Unificar el eje de modulación entre STFT y CWT** (downsample temporal post-CWT a `dt` análogo o forzar mismo Nyquist) — pre-requisito para una comparación STFT vs CWT honesta.
+   - **Ensemble STFT+CWT** (late fusion) explotando ortogonalidad observada de saliency.
    - **CWT tuning específico**: explorar cmor1-1, n_scales mayor, cone-of-influence.
    - **Comparación T-F sin resize forzado**: dos CNNs distintas para resoluciones nativas.
    - **Test externo** en otro dataset EEG-AD para validar generalización.
    - **Banco de filtros con bandas no uniformes** (Condición C de la propuesta original).
    - **Nested CV** para grid search de patches con validación real.
    - **Dataset balanceado por género o N mayor** para validar robustez del modelo.
-   - **Más seeds (10+)** para inferencias estadísticas más sólidas.
+   - **Más seeds (10+)** para inferencias estadísticas más sólidas con DeLong por seed.
 
 ---
 

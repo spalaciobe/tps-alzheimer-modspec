@@ -121,7 +121,11 @@ def main():
     if p_fisher < 0.05:
         print("CONCLUSIÓN: hay diferencia significativa en accuracy entre géneros (posible sesgo).")
     else:
-        print("CONCLUSIÓN: no hay diferencia significativa en accuracy entre géneros (modelo robusto al sesgo).")
+        # OJO: ausencia de evidencia NO es evidencia de ausencia. Con n_F y n_M
+        # de este orden el test tiene poder modesto para detectar diferencias
+        # pequenas/medias; un p alto NO demuestra robustez del modelo.
+        print("CONCLUSIÓN: no hay evidencia significativa de diferencia entre géneros "
+              "(ausencia de evidencia, no evidencia de ausencia; poder estadístico limitado).")
 
     (OUT / "gender_stratified.json").write_text(json.dumps(result, indent=2))
     print(f"\nGuardado: {OUT / 'gender_stratified.json'}")

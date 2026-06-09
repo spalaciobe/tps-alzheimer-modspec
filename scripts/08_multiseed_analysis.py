@@ -102,7 +102,12 @@ def wilcoxon_per_seed(stft_runs: list[dict], cwt_runs: list[dict], key: str = "s
 
 
 def delong_pooled(stft_runs: list[dict], cwt_runs: list[dict]) -> dict:
-    """DeLong test sobre scores agrupados por sujeto (mediana entre seeds)."""
+    """DeLong test sobre scores agrupados por sujeto (mediana entre seeds).
+
+    NOTA: este DeLong "pooled" opera sobre la mediana entre seeds, que es un
+    ensemble. Puede inflar la significancia al reducir varianza. La inferencia
+    metodológicamente correcta es delong_per_seed_combined() abajo.
+    """
     by_sub_stft = {}
     by_sub_cwt = {}
     y_truth = {}
@@ -125,6 +130,52 @@ def delong_pooled(stft_runs: list[dict], cwt_runs: list[dict]) -> dict:
         return {"error": str(e), "n_subjects": len(common)}
 
 
+def delong_per_seed_combined(stft_runs: list[dict], cwt_runs: list[dict]) -> dict:
+    """DeLong dentro de cada seed (n=N sujetos por test), luego combina los
+    p-values con Stouffer y Fisher. Esta es la inferencia recomendada.
+    """
+    from scipy.stats import combine_pvalues
+    per_seed = []
+    pvals = []
+    for i, (ra, rb) in enumerate(zip(stft_runs, cwt_runs)):
+        if ra is None or rb is None:
+            continue
+        by_a = dict(zip(ra["subjects"], ra["scores"]))
+        by_b = dict(zip(rb["subjects"], rb["scores"]))
+        truth = dict(zip(ra["subjects"], ra["y_true"]))
+        common = sorted(set(by_a) & set(by_b))
+        if not common:
+            continue
+        a = np.array([by_a[s] for s in common])
+        b = np.array([by_b[s] for s in common])
+        y = np.array([truth[s] for s in common])
+        try:
+            d = delong_test(y, a, b)
+        except Exception as e:
+            per_seed.append({"seed": i, "error": str(e)})
+            continue
+        per_seed.append({
+            "seed": i,
+            "n_subjects": len(common),
+            "auc_a": d.get("auc_a"),
+            "auc_b": d.get("auc_b"),
+            "auc_diff": d.get("auc_diff"),
+            "pvalue": d.get("pvalue"),
+        })
+        if d.get("pvalue") is not None:
+            pvals.append(d["pvalue"])
+    out = {"per_seed": per_seed}
+    if len(pvals) >= 2:
+        st = combine_pvalues(pvals, method="stouffer")
+        fi = combine_pvalues(pvals, method="fisher")
+        out["combined"] = {
+            "stouffer": {"statistic": float(st.statistic), "pvalue": float(st.pvalue)},
+            "fisher":   {"statistic": float(fi.statistic), "pvalue": float(fi.pvalue)},
+            "n_seeds_combined": len(pvals),
+        }
+    return out
+
+
 def main():
     result = {}
 
@@ -141,6 +192,7 @@ def main():
     cnn_cwt = [cnn_metrics("cwt", s) for s in SEEDS]
     result["cnn"]["wilcoxon_stft_vs_cwt"] = wilcoxon_per_seed(cnn_stft, cnn_cwt)
     result["cnn"]["delong_pooled"] = delong_pooled(cnn_stft, cnn_cwt)
+    result["cnn"]["delong_per_seed"] = delong_per_seed_combined(cnn_stft, cnn_cwt)
 
     print("=== SVM ===", flush=True)
     for sal in ["gradcam", "vanilla"]:
@@ -156,6 +208,7 @@ def main():
         cwt_runs = [svm_metrics("cwt", s, sal) for s in SEEDS]
         result["svm"][sal]["wilcoxon_stft_vs_cwt"] = wilcoxon_per_seed(stft_runs, cwt_runs)
         result["svm"][sal]["delong_pooled"] = delong_pooled(stft_runs, cwt_runs)
+        result["svm"][sal]["delong_per_seed"] = delong_per_seed_combined(stft_runs, cwt_runs)
 
     OUT.write_text(json.dumps(result, indent=2))
     print(f"Guardado: {OUT}", flush=True)

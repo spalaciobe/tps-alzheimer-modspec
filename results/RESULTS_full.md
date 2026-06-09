@@ -61,20 +61,45 @@
 
 ---
 
-## Tests estadísticos pareados (pooled sobre 3 seeds) con corrección BH-FDR
+## Tests estadísticos pareados con corrección BH-FDR (pooled sobre 3 seeds)
 
-| Comparación | Wilcoxon p por seed | DeLong AUC Δ | DeLong p crudo | BH-FDR p ajustado | Sig. tras corrección |
+| Comparación | Wilcoxon p por seed | DeLong AUC Δ | DeLong p (pooled) | BH-FDR p ajustado | Sig. tras corrección |
 |---|---|---|---|---|---|
-| **SVM Vainilla STFT vs CWT** | 0.893, 0.025, 0.338 | **+0.078 (STFT mayor)** | **0.014** | **0.042** | ✓ |
+| **SVM Vainilla STFT vs CWT** | 0.893, 0.025, 0.338 | **+0.078 (STFT mayor)** | **0.014** | **0.042** | ✓ marginal |
 | SVM Grad-CAM STFT vs CWT | 0.727, 0.863, 0.091 | −0.077 (CWT mayor) | 0.195 | 0.293 | ✗ |
 | CNN STFT vs CWT | 0.006, 0.401, 0.095 | +0.095 | 0.252 | 0.252 | ✗ |
 
-**Lectura matizada**:
+> ⚠️ El "DeLong pooled" se calcula sobre la **mediana de scores entre 3 seeds** (un ensemble), no sobre la distribución real por seed. Esto puede inflar la significancia. La inferencia correcta se reporta abajo.
 
-- Solo SVM vainilla sobrevive a la corrección BH-FDR (3 comparaciones, α=0.05), con p ajustado = 0.042 (marginalmente significativo).
-- El **Wilcoxon por seed es inconsistente** en SVM vainilla (0.893, 0.025, 0.338): solo seed=1 muestra diferencia significativa, perdida tras Bonferroni intra-seed.
-- Conclusión apropiada: **ausencia de evidencia a favor de CWT bajo esta configuración**, no superioridad intrínseca demostrada de STFT.
-- La hipótesis original del proyecto (CWT > STFT) **no obtiene evidencia a favor**, pero tampoco se prueba formalmente lo contrario.
+## Tests estadísticos pareados — DeLong POR SEED + combinación (lectura recomendada)
+
+Repitiendo DeLong AUC pareado **dentro de cada seed** (n=65 sujetos cada uno) y combinando los 3 p-values con Stouffer/Fisher:
+
+| seed | AUC STFT | AUC CWT | Δ AUC | DeLong p |
+|---|---|---|---|---|
+| s0 | 0.843 | 0.815 | +0.028 | 0.660 |
+| s1 | 0.844 | 0.739 | +0.105 | 0.051 |
+| s2 | 0.881 | 0.781 | +0.101 | 0.072 |
+
+**Combinación de p-values entre seeds (SVM vainilla STFT vs CWT):**
+- Stouffer: z = 1.55, **p combinado = 0.061**
+- Fisher: χ² = 12.03, **p combinado = 0.061**
+
+**Lectura final corregida**:
+
+- DeLong por seed da p = 0.66, 0.05, 0.07 (ninguno significativo individualmente al α=0.05); combinación = **p ≈ 0.061 (NS)**.
+- El "DeLong p=0.014 pooled" sobreestima la separación al operar sobre la mediana-de-seeds (ensemble).
+- **Por tanto: NO hay evidencia estadísticamente concluyente** de que SVM vainilla con STFT supere a CWT en este pipeline.
+- La hipótesis original del proyecto (CWT > STFT) **no obtiene evidencia a favor**, y la dirección opuesta tampoco alcanza significancia formal una vez se hace inferencia por seed.
+
+## ⚠️ Confound DSP crítico — eje de modulación incomparable
+
+Detectado en revisión externa final (2026-06-08):
+
+- **STFT**: `nperseg=128, noverlap=64` ⇒ paso temporal `dt=0.32 s` ⇒ **Nyquist modulación = 1.5625 Hz**. Crop a [0, 22.5] Hz deja **solo 13 bins reales**, luego interpolados bilinear a 45.
+- **CWT**: `dt=1/200=0.005 s` ⇒ Nyquist modulación = 100 Hz ⇒ **~180 bins en [0, 22.5] Hz**, subsampleados a 45.
+
+**Consecuencia**: la dimensión "frecuencia de modulación" del eje vertical en los modspecs **NO codifica el mismo contenido espectral** entre STFT y CWT. La supuesta "ventaja" de STFT en este TFM puede deberse en parte a esta asimetría de DSP, no a una propiedad intrínseca de la representación. Una comparación justa requeriría parametrizar la CWT con un `dt` análogo (downsample temporal post-CWT) o forzar el mismo Nyquist de modulación entre ambos. Esto se reporta como limitación principal en `docs/INFORME_TFM.md §5.1, §5.5`.
 
 ---
 
@@ -154,9 +179,10 @@ Sesgo de género detectado: discutir como limitación.
 
 ## Lectura final (con matices estadísticos)
 
-1. **Replicación funcional** del pipeline de Lopes 2023 sobre dataset público ds004504: AUC SVM vainilla STFT = 0.856 ± 0.022 vs 0.71 ± 0.02 del paper (orden de magnitud equivalente; comparación numérica orientativa por diferencias de dataset/población).
-2. **Hipótesis original CWT > STFT no obtiene evidencia a favor**: SVM vainilla STFT muestra mejor AUC media (DeLong p crudo=0.014, BH-FDR=0.042), pero Wilcoxon por seed inconsistente (0.893, 0.025, 0.338) → mejor interpretado como **ausencia de evidencia para CWT** bajo esta configuración (resize 45×45 + cmor1.5-1.0), no superioridad intrínseca demostrada de STFT.
-3. **El ranking depende del método de saliency**: con Grad-CAM la tendencia se invierte (CWT > STFT, NS). Las saliency maps de ambos métodos están casi descorrelacionadas (r ≈ -0.09 vainilla, -0.24 Grad-CAM) → posible **complementariedad** (ensemble como hipótesis futura).
-4. **Observaciones exploratorias (post-hoc)**: STFT + vainilla concentra saliency en bandas alpha (61%) + theta (28%) y canales occipito-temporales (O1, O2, T5, T6), coherente con literatura EEG-AD. Es indicio prometedor, no biomarcador validado.
-5. **Limitaciones honestas**: solo 3 seeds; grid search de patches heurístico (no nested CV); resize 45×45 puede favorecer STFT; CWT subexplorada (sin tuning específico); sesgo de género en dataset con poder limitado para descartarlo en el modelo (N≈129/grupo requerido); sin validación externa.
-6. **Reproducibilidad**: pipeline en GitHub público, requirements-lock, 3 seeds, anti-leakage estricto en LOSO + saliency-por-fold, tests unitarios pasando.
+1. **Replicación funcional** del pipeline de Lopes 2023 sobre dataset público ds004504: AUC SVM vainilla STFT = 0.856 ± 0.022 vs 0.71 ± 0.02 del paper. Cifras en el mismo rango; comparación numérica orientativa por diferencias de dataset/población.
+2. **Hipótesis original CWT > STFT no obtiene evidencia a favor, pero la dirección opuesta tampoco alcanza significancia formal**. DeLong por seed + combinación (Stouffer/Fisher) da **p ≈ 0.061 (NS)** para SVM vainilla STFT vs CWT. El "p=0.014 pooled" sobre la mediana-de-seeds (ensemble) sobreestima la separación. Lectura conservadora: **ausencia de evidencia concluyente** en ambas direcciones.
+3. **Confound DSP crítico**: los ejes de modulación de STFT (Nyquist 1.56 Hz) y CWT (Nyquist 100 Hz, subsampleado) NO codifican el mismo contenido espectral. La comparación STFT vs CWT en este TFM está confundida con esta asimetría de DSP, no controlada por diseño. Una comparación justa requeriría unificar el `dt` temporal post-T-F. (Ver `docs/INFORME_TFM.md §5.1`.)
+4. **El ranking depende del método de saliency**: con Grad-CAM la tendencia se invierte (CWT > STFT, NS). Las saliency maps de ambos métodos son **estadísticamente ortogonales** (r ≈ −0.09 vainilla, −0.24 Grad-CAM, ningún Pearson p<0.05) → posible **complementariedad** (ensemble como hipótesis futura), no anti-correlación.
+5. **Observaciones exploratorias (post-hoc)**: STFT + vainilla concentra saliency en bandas alpha (61%) + theta (28%) y canales occipito-temporales (O1, O2, T5, T6), coherente con literatura EEG-AD. Indicio prometedor, no biomarcador validado. **No reportamos atribución por banda para CWT** porque su eje de portadora es no-lineal (geomspace) y la asignación píxel→banda requeriría reescribir el mapeo (ver limitación 14 en `docs/INFORME_TFM.md §5.5`).
+6. **Limitaciones honestas**: solo 3 seeds; grid search de patches heurístico (no nested CV); resize 45×45 puede favorecer STFT; CWT subexplorada (sin tuning específico); sesgo de género en dataset con poder limitado para descartarlo en el modelo (**ausencia de evidencia, no evidencia de ausencia**); sin validación externa; ejes de modulación incomparables entre métodos.
+7. **Reproducibilidad**: pipeline en GitHub público, requirements-lock, 3 seeds, anti-leakage estricto en LOSO + saliency-por-fold, tests unitarios pasando.
