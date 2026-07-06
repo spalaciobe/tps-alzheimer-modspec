@@ -1,4 +1,4 @@
-\documentclass[aspectratio=169, 10pt]{beamer}
+\documentclass[aspectratio=169, 11pt]{beamer}
 
 % --- Tema y colores ---
 \usetheme{Madrid}
@@ -21,9 +21,9 @@
 \usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc}
 
 % --- Metadata ---
-\title[Informe final --- STFT vs CWT en EEG-AD]{%
-    Replicación de Lopes et al.~2023 sobre OpenNeuro \texttt{ds004504}}
-\subtitle{Informe final: STFT vs CWT-Morlet como descomposición tiempo-frecuencia}
+\title[STFT vs CWT en EEG-Alzheimer]{%
+    ¿Importa cómo descomponemos el EEG para detectar Alzheimer?}
+\subtitle{Replicación de Lopes et al.~2023 y comparación STFT vs CWT-Morlet}
 \author{Sebastián Palacio Betancur}
 \institute[UNAL]{%
     Universidad Nacional de Colombia --- Sede Medellín \\
@@ -42,50 +42,63 @@
 \end{frame}
 
 % ============================================================
-% SLIDE 2: Recap + cambios respecto al avance
+% SLIDE 2: La pregunta (hook)
 % ============================================================
-\begin{frame}{De la propuesta al informe final}
+\begin{frame}{La pregunta}
 
 \begin{columns}[T]
-\begin{column}{0.52\textwidth}
-\textbf{Pregunta de investigación}:
-\begin{quote}\small\itshape
-¿Produce la CWT-Morlet un espectrograma de modulación con mayor poder
-discriminativo para AD que la STFT?
-\end{quote}
-
-\vspace{4pt}
-\textbf{Lo que se hizo desde el avance:}
-\begin{itemize}\small
-    \item Multi-seed (3~seeds) sobre las 6~configuraciones.
-    \item DeLong por seed + Stouffer/Fisher (inferencia correcta).
-    \item BH-FDR sobre las 3~comparaciones principales.
-    \item Post-experimentos: saliency, bandas, canales, género.
-    \item Auditoría externa en dos rondas.
+\begin{column}{0.56\textwidth}
+\begin{itemize}
+    \item El Alzheimer es la demencia \#1 ($>$55 M personas). Detectarlo
+    temprano es clave, pero MRI/PET son caros.
+    \item El \textbf{EEG} es barato y portátil. Su
+    \textbf{espectrograma de modulación} captura \emph{a qué ritmo}
+    cambia la energía en cada banda --- un biomarcador prometedor.
+    \item Todo depende del primer paso: la \textbf{descomposición
+    tiempo-frecuencia}.
 \end{itemize}
-\end{column}
-\begin{column}{0.42\textwidth}
-\begin{block}{Hipótesis original}
-\small CWT $>$ STFT por mejor resolución frecuencial en bajas Hz.
+
+\vfill
+\begin{block}{Hipótesis}
+\small La \textbf{CWT}, con mejor resolución en bajas frecuencias,
+debería superar a la \textbf{STFT} para el Alzheimer.
 \end{block}
-\begin{alertblock}{Resultado final}
-\small \textbf{No confirmada}, pero la dirección opuesta tampoco se prueba
-con rigor estadístico.
-\end{alertblock}
+\end{column}
+\begin{column}{0.40\textwidth}
+\centering
+\begin{tikzpicture}[
+    box/.style={draw, rounded corners, fill=blue!10, minimum width=2.8cm,
+                minimum height=0.75cm, align=center, font=\small},
+    arr/.style={-{Stealth[length=2.5mm]}, thick}
+]
+\node[box] (eeg) {Señal EEG\\$x[n]$};
+\node[box, below=0.45cm of eeg, fill=orange!15] (tf) {\textbf{STFT \emph{o} CWT}};
+\node[box, below=0.45cm of tf] (pow) {Potencia $|X(t,f)|^2$};
+\node[box, below=0.45cm of pow] (mod) {Espectrograma\\de modulación};
+\draw[arr] (eeg) -- (tf);
+\draw[arr] (tf) -- (pow);
+\draw[arr] (pow) -- node[right, font=\scriptsize]{$\mathcal{F}_t$} (mod);
+\end{tikzpicture}
 \end{column}
 \end{columns}
+
+\vfill
+\centering\small
+\textbf{Plan}: replicar el pipeline de Lopes 2023 sobre datos
+\textbf{públicos} (OpenNeuro \texttt{ds004504}) y responder si la CWT
+gana.
 
 \end{frame}
 
 % ============================================================
-% SLIDE 3: Pipeline implementado
+% SLIDE 3: Lo que construí
 % ============================================================
-\begin{frame}{Pipeline implementado (ablation factorial completa)}
+\begin{frame}{Lo que construí}
 
 \centering
-\resizebox{0.92\linewidth}{!}{%
+\resizebox{0.95\linewidth}{!}{%
 \begin{tikzpicture}[
-    node distance=0.4cm and 0.4cm,
+    node distance=0.4cm and 0.45cm,
     every node/.style={font=\scriptsize},
     block/.style={rectangle, draw, fill=blue!10, minimum width=2.1cm,
                   minimum height=0.6cm, align=center, rounded corners=2pt},
@@ -93,15 +106,15 @@ con rigor estadístico.
     sal/.style={block, fill=orange!15},
     arrow/.style={-Latex, thick}
 ]
-    \node[block] (b1) {EEG raw \\ \texttt{.set} EEGLAB};
+    \node[block] (b1) {EEG raw};
     \node[block, right=of b1] (b2) {FIR 0.5--45 Hz \\ ICA+ICLabel};
     \node[block, right=of b2] (b3) {Resample 200 Hz \\ Epochs 8 s};
-    \node[block, right=of b3] (b4) {STFT \emph{o} CWT \\ Modspec $45\times45$};
+    \node[block, right=of b3] (b4) {\textbf{STFT \emph{o} CWT} \\ Modspec $45\times45$};
     \node[cnn, right=of b4] (b5) {CNN \\ 2 conv + 3 FC};
     \node[cnn, below=0.6cm of b5] (b6) {LOSO-CV \\ 65 folds};
-    \node[sal, left=of b6] (b7) {Saliency POR FOLD \\ Grad-CAM \emph{o} vainilla};
-    \node[sal, left=of b7] (b8) {Patches \\ + Features + ANOVA};
-    \node[sal, left=of b8] (b9) {SVM RBF \\ $\gamma=1/24$, $C=1$};
+    \node[sal, left=of b6] (b7) {Saliency \\ (Grad-CAM \emph{o} vainilla)};
+    \node[sal, left=of b7] (b8) {Patches \\ + Features};
+    \node[sal, left=of b8] (b9) {SVM RBF};
 
     \draw[arrow] (b1) -- (b2);
     \draw[arrow] (b2) -- (b3);
@@ -114,84 +127,85 @@ con rigor estadístico.
 \end{tikzpicture}}%
 
 \vfill
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
 \small
-\textbf{$2 \times 2 \times 3$ ablation}: \{STFT, CWT\} $\times$
-\{Grad-CAM, vainilla\} $\times$ 3~seeds $=$ \textbf{12~corridas
-$\times$ 65~folds}. Anti-leakage estricto: saliency, patches y
-\texttt{SelectKBest} se calculan POR FOLD.
+\textbf{Idea del método (Lopes)}: la CNN no clasifica ---
+\emph{descubre} las regiones del espectrograma que separan AD de sanos;
+un SVM las usa como \emph{features}.
+\end{column}
+\begin{column}{0.48\textwidth}
+\small
+\textbf{Mi diseño}: ablation completa
+\[
+\underbrace{\{\text{STFT, CWT}\}}_{2} \times
+\underbrace{\{\text{Grad-CAM, vainilla}\}}_{2} \times
+\underbrace{3\text{ seeds}}_{}
+\]
+Anti-leakage estricto: todo se calcula \textbf{por fold}.
+\end{column}
+\end{columns}
 
 \end{frame}
 
 % ============================================================
-% SLIDE 4: Resultados maestros multi-seed
+% SLIDE 4: El titular
 % ============================================================
-\begin{frame}{Resultados multi-seed (media $\pm$ SD entre 3 seeds)}
+\begin{frame}{El titular: la replicación funciona}
 
-\begin{table}
+\begin{columns}[T]
+\begin{column}{0.52\textwidth}
 \centering
+\includegraphics[width=\linewidth]{figures_informe_final/auc_master_summary.png}\\[2pt]
+{\scriptsize AUC media $\pm$ SD entre 3 seeds, 6 configuraciones.}
+\end{column}
+\begin{column}{0.44\textwidth}
 \small
-\begin{tabular}{l l c c c}
-\toprule
-\textbf{Clasificador} & \textbf{T-F} & \textbf{Acc} & \textbf{F1} & \textbf{AUC} \\
-\midrule
-CNN end-to-end                  & STFT & $0.656 \pm 0.024$ & $0.642 \pm 0.020$ & $0.695 \pm 0.022$ \\
-CNN end-to-end                  & CWT  & $0.626 \pm 0.071$ & $0.611 \pm 0.070$ & $0.590 \pm 0.069$ \\
-SVM patches Grad-CAM            & STFT & $0.662 \pm 0.031$ & $0.643 \pm 0.041$ & $0.713 \pm 0.020$ \\
-SVM patches Grad-CAM            & CWT  & $0.703 \pm 0.009$ & $0.687 \pm 0.026$ & $0.800 \pm 0.010$ \\
-\rowcolor{green!12}
-\textbf{SVM patches vainilla}   & \textbf{STFT} & $\mathbf{0.764 \pm 0.009}$ & $\mathbf{0.762 \pm 0.011}$ & $\mathbf{0.856 \pm 0.022}$ \\
-SVM patches vainilla            & CWT  & $0.677 \pm 0.081$ & $0.673 \pm 0.094$ & $0.778 \pm 0.038$ \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{itemize}
+    \item Mejor configuración: \textbf{SVM vainilla + STFT}
+    (la \emph{fiel al paper}):
+    \[
+    \text{AUC} = \mathbf{0.856 \pm 0.022}
+    \]
+    \item En el rango del paper original
+    ($\text{Acc}\ 0.71 \pm 0.02$), sobre \textbf{datos públicos
+    independientes}.
+\end{itemize}
 
 \vfill
-\textbf{Mejor configuración: SVM vainilla + STFT}
-(la \emph{paper-faithful}). Métricas en el rango del paper original
-Lopes 2023 ($\text{Acc} = 0.71 \pm 0.02$ en T2: N vs AD), sobre dataset
-público independiente.
+\begin{block}{Y a primera vista\ldots}
+\small STFT parecía \textbf{superar} a CWT
+(DeLong $p = 0.014$). \\
+\textit{Titular tentador: ``STFT gana''.}
+\end{block}
+\end{column}
+\end{columns}
 
 \vfill
-\textbf{Observación de varianza}: CWT vainilla tiene SD muy alta
-($\pm 0.081$ acc) frente a STFT vainilla ($\pm 0.009$). Reportar
-single-seed habría ocultado esta inestabilidad.
+\centering\small
+\textbf{Replicación funcional: exitosa.} Pero antes de anunciar que
+STFT gana, había que hacer bien la estadística.
 
 \end{frame}
 
 % ============================================================
-% SLIDE 5: Inferencia estadística — DeLong por seed + BH-FDR
+% SLIDE 5: El giro (rigor)
 % ============================================================
-\begin{frame}{Inferencia estadística: la \emph{forma} de calcular el $p$ importa}
+\begin{frame}{El giro: el rigor me obligó a frenar --- dos veces}
 
 \begin{columns}[T]
 \begin{column}{0.50\textwidth}
-\textbf{Versión A --- DeLong ``pooled''} (sub-óptima, sobre la mediana
-entre seeds = ensemble):
+\textbf{Freno 1 --- La estadística.}
+\small El $p=0.014$ se calculaba sobre la \emph{mediana} entre seeds
+(un ensemble que infla la señal). Haciéndolo bien --- DeLong
+\textbf{por seed} + combinación:
 
 \begin{table}
 \centering
 \scriptsize
 \begin{tabular}{l c c}
 \toprule
-Comparación (vainilla) & $p$ & BH-FDR $q$ \\
-\midrule
-SVM STFT vs CWT      & $\mathbf{0.014}$ & $\mathbf{0.042}^\checkmark$ \\
-SVM Grad-CAM STFT vs CWT & $0.195$ & $0.293$ \\
-CNN STFT vs CWT      & $0.252$ & $0.252$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\vfill
-\textbf{Versión B --- DeLong \emph{por seed} + Stouffer combinado}
-(metodológicamente correcta):
-
-\begin{table}
-\centering
-\scriptsize
-\begin{tabular}{l c c}
-\toprule
-Comparación (vainilla) & $p$ Stouffer & BH-FDR $q$ \\
+Comparación (vainilla) & $p$ correcto & BH-FDR $q$ \\
 \midrule
 SVM STFT vs CWT      & $0.061$ & $0.102$ \\
 SVM Grad-CAM STFT vs CWT & $0.068$ & $0.102$ \\
@@ -199,46 +213,13 @@ CNN STFT vs CWT      & $0.266$ & $0.266$ \\
 \bottomrule
 \end{tabular}
 \end{table}
+\centering\footnotesize\textbf{Ninguna comparación sobrevive
+($q \geq 0.10$).}
 \end{column}
-\begin{column}{0.46\textwidth}
-\begin{alertblock}{Lectura final}
-\small
-La ``mediana entre seeds'' es un ensemble y \textbf{infla la
-separación aparente}. Bajo la inferencia correcta:
-\begin{itemize}\small
-    \item Ningún $p$ por seed $< 0.05$.
-    \item Combinación Stouffer $= 0.061$ (NS).
-    \item Tras BH-FDR: \textbf{ninguna comparación sobrevive
-    ($q \geq 0.10$)}.
-\end{itemize}
-\end{alertblock}
-
-\vspace{4pt}
-\textbf{DeLong por seed} (SVM vainilla):
-\begin{center}\scriptsize
-\begin{tabular}{c c c c}
-\toprule
-seed & $\Delta$AUC & $p$ \\
-\midrule
-$s_0$ & $+0.028$ & $0.660$ \\
-$s_1$ & $+0.105$ & $0.051$ \\
-$s_2$ & $+0.101$ & $0.072$ \\
-\bottomrule
-\end{tabular}
-\end{center}
-\end{column}
-\end{columns}
-
-\end{frame}
-
-% ============================================================
-% SLIDE 6: Confound DSP del eje de modulación
-% ============================================================
-\begin{frame}{Confound DSP: el eje de modulación no es comparable}
-
-\begin{columns}[T]
-\begin{column}{0.50\textwidth}
-\textbf{Ambas imágenes finales son $45 \times 45$, pero NO codifican lo mismo:}
+\begin{column}{0.47\textwidth}
+\textbf{Freno 2 --- El DSP.}
+\small Las dos imágenes son $45\times45$, pero su \emph{eje de
+modulación} no mide lo mismo:
 
 \begin{table}
 \centering
@@ -247,320 +228,98 @@ $s_2$ & $+0.101$ & $0.072$ \\
 \toprule
  & STFT & CWT \\
 \midrule
-$dt$ envolvente   & $0.32$ s & $0.005$ s \\
-Nyquist mod. real & $\mathbf{1.5625}$ Hz & $100$ Hz \\
-Bins en $[0,22.5]$ Hz & $13$ & $\sim 180$ \\
-Estrategia para 45 bins & \emph{interpolación} & \emph{subsample} \\
-Rango efectivo & $[0, 1.56]$ Hz & $[0, 22.5]$ Hz \\
+Nyquist mod. & $\mathbf{1.56}$ Hz & $100$ Hz \\
+Rango real   & $[0, 1.56]$ & $[0, 22.5]$ Hz \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \vfill
-\begin{alertblock}{Implicación}
-\small
-La comparación STFT vs CWT en este pipeline \textbf{NO es una
-comparación justa entre transformadas T-F}: es entre dos pipelines con
-ejes de modulación drásticamente distintos.
+\begin{alertblock}{Conclusión honesta}
+\small La comparación STFT vs CWT \textbf{no es concluyente} --- y
+además está \textbf{confundida por DSP}. No es una comparación justa
+entre transformadas.
 \end{alertblock}
-\end{column}
-\begin{column}{0.46\textwidth}
-\centering
-\textbf{Modspec promedio (saliency vainilla)}
-\vspace{4pt}
-
-\includegraphics[width=0.95\linewidth]{figures_informe_final/modspec_means_stft.png}\\[2pt]
-{\scriptsize STFT (rango real $[0, 1.56]$ Hz interpolado a 45 bins)}
-
-\vspace{6pt}
-\includegraphics[width=0.95\linewidth]{figures_informe_final/modspec_means_cwt.png}\\[2pt]
-{\scriptsize CWT (rango real $[0, 22.5]$ Hz subsampleado a 45 bins)}
 \end{column}
 \end{columns}
 
 \end{frame}
 
 % ============================================================
-% SLIDE 7: Pipeline dependence + saliency ortogonal
+% SLIDE 6: Lo que de verdad encontré
 % ============================================================
-\begin{frame}{El método de saliency cambia la conclusión}
+\begin{frame}{Lo que de verdad encontré}
 
 \begin{columns}[T]
 \begin{column}{0.46\textwidth}
 \centering
 \includegraphics[width=\linewidth]{figures_informe_final/saliency_compare.png}\\[2pt]
-{\scriptsize Saliency promedio (vainilla): STFT vs CWT son
-cualitativamente distintos.}
+{\scriptsize Saliency (vainilla): STFT y CWT miran regiones distintas.}
 \end{column}
 \begin{column}{0.50\textwidth}
-\small\textbf{Correlación 2D entre saliency maps} (3~seeds):
-
-\begin{table}
-\centering
-\scriptsize
-\begin{tabular}{l c}
-\toprule
-Comparación & Pearson $r$ \\
-\midrule
-STFT vs CWT (Grad-CAM)   & $-0.237 \pm 0.119$ \\
-STFT vs CWT (vainilla)   & $-0.086 \pm 0.076$ \\
-Grad-CAM vs vainilla (STFT) & $+0.114 \pm 0.043$ \\
-Grad-CAM vs vainilla (CWT)  & $-0.166 \pm 0.106$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\vfill
-\textbf{Lectura}: los pares son
-\textbf{estadísticamente ortogonales}
-(ningún $r$ con $p < 0.05$); \emph{no} anti-correlacionados.
-
-\vfill
-\textbf{Consecuencia}: con Grad-CAM, CWT $>$ STFT (NS); con vainilla,
-STFT $>$ CWT (NS). \\
-El ``biomarcador descubierto'' \textbf{depende del pipeline completo},
-no solo de la transformada T-F.
-
-\vfill
-\textbf{Hipótesis a futuro}: \emph{ensemble} STFT + CWT por
-\emph{late fusion} (complementariedad real).
-\end{column}
-\end{columns}
-
-\end{frame}
-
-% ============================================================
-% SLIDE 8: Resumen AUC + ROC
-% ============================================================
-\begin{frame}{Resumen visual: AUC multi-seed por configuración}
-
-\begin{columns}[T]
-\begin{column}{0.55\textwidth}
-\centering
-\includegraphics[width=\linewidth]{figures_informe_final/auc_master_summary.png}\\[2pt]
-{\scriptsize AUC media $\pm$ SD entre 3 seeds, 6 configuraciones.}
-\end{column}
-\begin{column}{0.42\textwidth}
-\centering
-\includegraphics[width=\linewidth]{figures_informe_final/roc_svm.png}\\[2pt]
-{\scriptsize ROC SVM vainilla (mejor configuración) sobre LOSO 65~sujetos.}
-\end{column}
-\end{columns}
-
-\vfill
-\small
-\textbf{Mejor: SVM vainilla + STFT} (AUC $0.856 \pm 0.022$). \\
-Métricas en el rango del paper original sobre dataset público
-independiente $\Rightarrow$ \textbf{replicación funcional exitosa}.
-
-\end{frame}
-
-% ============================================================
-% SLIDE 9: Interpretabilidad — canales y bandas (STFT)
-% ============================================================
-\begin{frame}{Interpretabilidad: ¿qué descubre el modelo? (solo STFT)}
-
-\begin{columns}[T]
-\begin{column}{0.50\textwidth}
-\centering
-\includegraphics[width=\linewidth]{figures_informe_final/channel_importance.png}\\[2pt]
-{\scriptsize Importancia por canal (SVM vainilla STFT, 3~seeds).}
-\end{column}
-\begin{column}{0.46\textwidth}
-\textbf{Bandas canónicas (top-10\% píxeles, solo STFT)}:
-
-\begin{table}
-\centering
-\scriptsize
-\begin{tabular}{l c c}
-\toprule
-Banda & vainilla & Grad-CAM \\
-\midrule
-$\delta$ (0.5--4)   & $5.8\%$ & $0.0\%$ \\
-\rowcolor{green!12}
-$\theta$ (4--8)     & $\mathbf{27.9\%}$ & $0.0\%$ \\
-\rowcolor{green!12}
-$\alpha$ (8--13)    & $\mathbf{61.1\%}$ & $0.0\%$ \\
-$\beta$ (13--30)    & $5.3\%$  & $0.7\%$ \\
-$\gamma$ (30--45)   & $0.0\%$  & $99.3\%$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\vfill
-\textbf{STFT + vainilla concentra $\sim 89\%$ de saliency en
-$\alpha + \theta$}, coherente con biomarcadores clínicos de EA
-(atenuación $\alpha$ occipital, aumento $\theta$ --- Fraga 2013).
-
-\vfill
-\textbf{Canales top}: O1, O2, T5, T6 (occipito-temporales) ---
-convergente con literatura clínica (atrofia temporal medial,
-atenuación $\alpha$).
-
-\vfill
-\scriptsize\itshape (Análisis post-hoc; CWT omitido por su eje
-portador geomspace.)
-\end{column}
-\end{columns}
-
-\end{frame}
-
-% ============================================================
-% SLIDE 10: Limitaciones honestas
-% ============================================================
-\begin{frame}{Limitaciones honestas (16 documentadas en el informe)}
-
-\begin{columns}[T]
-\begin{column}{0.50\textwidth}
-\textbf{Críticas (afectan la conclusión principal)}:
-\begin{itemize}\small
-    \item \textbf{Confound DSP del eje de modulación} (STFT
-    Nyquist $1.56$ Hz vs CWT $100$ Hz). La limitación más seria.
-    \item \textbf{Solo 3 seeds} (poder estadístico modesto).
-    \item \textbf{CWT subexplorada}: solo \texttt{cmor1.5-1.0},
-    32~escalas log; sin tuning específico.
-    \item \textbf{Resize bilinear $45 \times 45$} oculta el desajuste
-    anterior.
-\end{itemize}
-
-\vfill
-\textbf{Metodológicas}:
-\begin{itemize}\small
-    \item Grid search de patches heurístico (no nested CV).
-    \item BH-FDR post-hoc, no pre-registrado.
-    \item Sin validación externa (otro dataset).
-\end{itemize}
-\end{column}
-\begin{column}{0.46\textwidth}
-\textbf{De interpretabilidad}:
-\begin{itemize}\small
-    \item Saliency \emph{unstable} fold-to-fold (Jaccard $\approx 0.05$).
-    \item Análisis post-hoc (bandas, canales, género) no
-    pre-registrados.
-    \item Atribución por banda restringida a STFT (eje CWT geomspace).
-\end{itemize}
-
-\vfill
-\textbf{Sobre el dataset}:
-\begin{itemize}\small
-    \item Sesgo de género ($\chi^2$ $p = 0.039$), Fisher F vs M
-    $p = 0.201$ pero poder $\sim 25$--$30\%$
-    ($N \approx 64$/grupo requerido).
-    \item \emph{Ausencia de evidencia $\neq$ evidencia de ausencia}.
-    \item HC con MMSE perfecto (30/30) --- posible \emph{cherry-picking}
-    upstream.
-\end{itemize}
-\end{column}
-\end{columns}
-
-\end{frame}
-
-% ============================================================
-% SLIDE 11: Conclusiones
-% ============================================================
-\begin{frame}{Conclusiones}
-
 \begin{enumerate}
-    \item \textbf{Replicación funcional exitosa} del pipeline de Lopes
-    sobre dataset público \texttt{ds004504}: SVM vainilla + STFT
-    alcanza Acc $0.764 \pm 0.009$, AUC $0.856 \pm 0.022$, en el rango
-    del paper original.
-
-    \item \textbf{La comparación STFT vs CWT no es concluyente}:
-    \begin{itemize}\small
-        \item DeLong por seed + Stouffer: $p \approx 0.061$ (NS).
-        \item Tras BH-FDR: \textbf{ninguna comparación sobrevive}
-        ($q \geq 0.10$).
-        \item Adicionalmente, los ejes de modulación entre STFT y CWT
-        son \textbf{físicamente distintos} --- la comparación está
-        confundida por DSP, no controlada por diseño.
-    \end{itemize}
-
     \item \textbf{El método de saliency cambia el ranking}: con
-    Grad-CAM, CWT $>$ STFT (NS); con vainilla, STFT $>$ CWT (NS). Las
-    saliency maps son \textbf{estadísticamente ortogonales}
-    $\Rightarrow$ \emph{posible complementariedad} (ensemble como
-    hipótesis futura).
+    Grad-CAM, CWT parece ganar; con vainilla, STFT. \\
+    Los mapas son \textbf{estadísticamente ortogonales}
+    ($r \approx -0.09$) $\Rightarrow$ \emph{posible complementariedad}
+    (idea de ensemble a futuro).
 
-    \item \textbf{Observación clínicamente coherente (post-hoc)}: STFT
-    vainilla concentra saliency en $\alpha + \theta$ y canales
-    occipito-temporales --- convergente con literatura clínica EEG-AD.
+    \vfill
+    \item \textbf{El modelo redescubre biología conocida}: STFT
+    vainilla concentra $\sim$89\% de su atención en bandas
+    $\boldsymbol{\alpha + \theta}$ y canales
+    \textbf{occipito-temporales} (O1, O2, T5, T6) --- justo donde la
+    clínica localiza el Alzheimer.
+\end{enumerate}
+\end{column}
+\end{columns}
 
-    \item \textbf{Aporte metodológico para la comunidad}: reportar
-    siempre varianza por seed, método de saliency, y poder estadístico
-    al afirmar ``ausencia de efecto''.
+\vfill
+\centering\small
+El \emph{qué} descubre el modelo depende del pipeline completo, no solo
+de la transformada. \textit{Ese fue el hallazgo más interesante.}
+
+\end{frame}
+
+% ============================================================
+% SLIDE 7: Lo que me llevo + cierre
+% ============================================================
+\begin{frame}{Lo que me llevo}
+
+\begin{columns}[T]
+\begin{column}{0.60\textwidth}
+\begin{enumerate}
+    \item \textbf{La replicación funciona} sobre datos públicos ---
+    el método de Lopes es reproducible.
+    \item \textbf{La hipótesis CWT $>$ STFT no se sostiene}\ldots pero
+    la contraria tampoco: el rigor manda.
+    \item \textbf{Lecciones metodológicas} más valiosas que el
+    resultado: reportar varianza por seed, elegir bien el estadístico,
+    y comparar transformadas solo con ejes equivalentes.
 \end{enumerate}
 
-\end{frame}
-
-% ============================================================
-% SLIDE 12: Trabajo futuro + repo
-% ============================================================
-\begin{frame}{Trabajo futuro y reproducibilidad}
-
-\begin{columns}[T]
-\begin{column}{0.55\textwidth}
-\textbf{Lo que harías diferente (o adicional)}:
-\begin{itemize}\small
-    \item \textbf{Unificar el eje de modulación} STFT$\leftrightarrow$CWT
-    (decimar envolvente CWT al $dt$ de STFT).
-    Pre-requisito para cualquier comparación honesta.
-    \item \textbf{Ensemble STFT + CWT} por \emph{late fusion}
-    (explotar la ortogonalidad observada).
-    \item \textbf{CWT tuning}: cmor1-1, $n_\text{scales}$ mayor,
-    cone-of-influence.
-    \item \textbf{Nested CV} para grid search de patches.
-    \item \textbf{Banda de filtros adaptado} (Condición C de la
-    propuesta original).
-    \item \textbf{$\geq 10$ seeds} para inferencia por seed más
-    robusta.
-    \item \textbf{Test externo} en otro dataset EEG-AD.
-\end{itemize}
+\vfill
+\small\textbf{Lo primero a futuro}: unificar el eje de modulación
+antes de volver a comparar STFT vs CWT.
 \end{column}
-\begin{column}{0.42\textwidth}
-\textbf{Reproducibilidad total}:
-\begin{itemize}\small
-    \item Repo público con \texttt{requirements-lock.txt}.
-    \item 3 seeds fijas, anti-leakage estricto LOSO.
-    \item Configs YAML, tests unitarios pasando.
-    \item Informe completo en \texttt{docs/INFORME\_TFM.\{md,tex,pdf\}}.
-    \item Auditoría externa documentada
-    (\texttt{docs/AUDIT.md}).
+\begin{column}{0.36\textwidth}
+\begin{block}{Reproducibilidad}
+\small
+\begin{itemize}
+    \item Repo público, 3 seeds fijas.
+    \item Anti-leakage estricto LOSO.
+    \item Informe + auditoría externa.
 \end{itemize}
-
-\vfill
+\end{block}
 \centering
-\textbf{Repo}:\\[2pt]
-{\small\url{github.com/spalaciobe/tps-alzheimer-modspec}}
-
-\vfill
-\small\textbf{Tiempo de cómputo}: $\sim 48$ h en RTX 3050 Laptop
-(4 GB).
+{\scriptsize\url{github.com/spalaciobe/tps-alzheimer-modspec}}
 \end{column}
 \end{columns}
 
-\end{frame}
-
-% ============================================================
-% SLIDE 13: Cierre
-% ============================================================
-\begin{frame}{}
-
+\vfill
 \centering
-\vspace{1cm}
-{\Large\bfseries Gracias}
-
-\vspace{0.8cm}
-{\large Preguntas y comentarios bienvenidos.}
-
-\vspace{1.5cm}
-\textbf{Sebastián Palacio Betancur}\\[4pt]
-Universidad Nacional de Colombia --- Sede Medellín\\[8pt]
-\small Tópicos en Procesamiento Digital de Señales\\
-Junio de 2026
-
-\vspace{0.6cm}
-\small \url{github.com/spalaciobe/tps-alzheimer-modspec}
+{\Large\bfseries Gracias} \quad ---\quad \normalsize preguntas
+bienvenidas.
 
 \end{frame}
 
