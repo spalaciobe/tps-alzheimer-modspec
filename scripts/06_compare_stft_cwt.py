@@ -38,6 +38,10 @@ def main() -> None:
     parser.add_argument("--per-fold", action="store_true",
                         help="Buscar resultados SVM en directorios _perfold")
     parser.add_argument("--saliency-method", choices=["gradcam", "vanilla"], default="gradcam")
+    parser.add_argument("--method-a", choices=["stft", "cwt", "cwt_fair"], default="stft",
+                        help="Primer método a comparar (etiqueta 'stft' en el JSON)")
+    parser.add_argument("--method-b", choices=["stft", "cwt", "cwt_fair"], default="cwt",
+                        help="Segundo método (p.ej. cwt_fair para la comparación justa)")
     args = parser.parse_args()
     suffix = "_quick" if args.quick else ""
     pf = "_perfold" if args.per_fold else ""
@@ -47,12 +51,13 @@ def main() -> None:
     cfg = yaml.safe_load(open(args.config))
     results_root = Path(cfg["paths"]["results"])
 
+    ma, mb = args.method_a, args.method_b
     if args.classifier == "cnn":
-        stft_dir = results_root / f"stft_{args.fs}_seed{args.seed}{suffix}"
-        cwt_dir = results_root / f"cwt_{args.fs}_seed{args.seed}{suffix}"
+        stft_dir = results_root / f"{ma}_{args.fs}_seed{args.seed}{suffix}"
+        cwt_dir = results_root / f"{mb}_{args.fs}_seed{args.seed}{suffix}"
     else:
-        stft_dir = results_root / f"svm_stft_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf}"
-        cwt_dir = results_root / f"svm_cwt_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf}"
+        stft_dir = results_root / f"svm_{ma}_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf}"
+        cwt_dir = results_root / f"svm_{mb}_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf}"
 
     stft_scores = load_fold_scores(stft_dir)
     cwt_scores = load_fold_scores(cwt_dir)
@@ -82,13 +87,17 @@ def main() -> None:
         "n_subjects": len(common),
         "classifier": args.classifier,
         "fs": args.fs,
-        "stft": {"accuracy": acc_stft, "ci95": [lo_stft, hi_stft]},
-        "cwt": {"accuracy": acc_cwt, "ci95": [lo_cwt, hi_cwt]},
+        "method_a": ma,
+        "method_b": mb,
+        ma: {"accuracy": acc_stft, "ci95": [lo_stft, hi_stft]},
+        mb: {"accuracy": acc_cwt, "ci95": [lo_cwt, hi_cwt]},
         "wilcoxon_score": w_score,
         "wilcoxon_correct": w_correct,
         "delong_auc": delong,
     }
-    out = Path(cfg["paths"]["results"]) / f"compare_{args.classifier}_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf}.json"
+    # Sufijo de par de métodos (vacío para el par por defecto stft-vs-cwt → compat).
+    pair = "" if (ma, mb) == ("stft", "cwt") else f"_{ma}_vs_{mb}"
+    out = Path(cfg["paths"]["results"]) / f"compare_{args.classifier}_{args.fs}_seed{args.seed}{suffix}{sal_tag}{pf}{pair}.json"
     out.write_text(json.dumps(summary, indent=2))
     logger.info(json.dumps(summary, indent=2))
 
