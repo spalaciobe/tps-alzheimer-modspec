@@ -35,19 +35,22 @@ def build_modspec_config(method: str, fs: int, configs_dir: Path) -> ModSpecConf
             window=d["window"], nperseg=nperseg, noverlap=noverlap,
             log_power=d["log_power"], eps=d["eps"],
         )
+    # CWT o CWT-fair (mismo TF; cwt_fair añade mod_env_rate_hz para igualar
+    # el eje de modulación con la STFT).
     return ModSpecConfig(
-        method="cwt", fs=fs,
+        method=method, fs=fs,
         target_shape=tuple(d["target_shape"]),
         carrier_range_hz=tuple(d["carrier_range_hz"]),
         mod_range_hz=tuple(d["mod_range_hz"]),
         wavelet=d["wavelet"], n_scales=d["n_scales"],
+        mod_env_rate_hz=d.get("mod_env_rate_hz"),
         log_power=d["log_power"], eps=d["eps"],
     )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", choices=["stft", "cwt"], required=True)
+    parser.add_argument("--method", choices=["stft", "cwt", "cwt_fair"], required=True)
     parser.add_argument("--fs", type=int, choices=[200, 500], default=200)
     parser.add_argument("--version", choices=["paper", "dataset"], default="paper")
     parser.add_argument("--config", type=Path, default=Path("configs/config.yaml"))

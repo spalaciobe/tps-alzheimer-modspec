@@ -40,7 +40,7 @@ def features_for_h5(p: Path, patches: list[Patch], n_subsample: int | None,
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--method", choices=["stft", "cwt"], required=True)
+    parser.add_argument("--method", choices=["stft", "cwt", "cwt_fair"], required=True)
     parser.add_argument("--fs", type=int, choices=[200, 500], default=200)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--config", type=Path, default=Path("configs/config.yaml"))
