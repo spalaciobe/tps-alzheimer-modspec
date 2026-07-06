@@ -26,7 +26,7 @@ Este trabajo replica de forma independiente el pipeline de Lopes et al. (2023) [
 **Conclusiones clave (con matices estadísticos explícitos):**
 
 1. **La replicación independiente del pipeline funciona**: SVM con saliency vainilla y STFT alcanza Acc 0.764 ± 0.009, AUC 0.856 ± 0.022, en el rango del 0.71 ± 0.02 reportado por Lopes (T2: N vs AD). La comparación es orientativa (datasets y poblaciones distintas), no equivalencia estricta.
-2. **La hipótesis original (CWT > STFT) no obtiene evidencia a favor, pero la inversa tampoco**: con saliency vainilla (la configuración más fiel al paper), CWT presenta AUC media menor (0.778 ± 0.038 vs 0.856 ± 0.022) y mayor varianza entre seeds. El "DeLong pooled p=0.014" sobre la mediana entre seeds (ensemble) sobreestima la separación; **DeLong por seed + combinación Stouffer/Fisher da p ≈ 0.061 (NS)**, y tras corrección BH-FDR sobre las 3 comparaciones principales **ninguna sobrevive** (q ≥ 0.10). Lectura conservadora: **no hay evidencia estadísticamente concluyente** en ninguna dirección.
+2. **La hipótesis original (CWT > STFT) no obtiene evidencia a favor, pero la inversa tampoco**: con saliency vainilla (la configuración más fiel al paper), CWT presenta AUC media menor (0.778 ± 0.038 vs 0.856 ± 0.022) y mayor varianza entre seeds. La inferencia formal (DeLong AUC por seed + combinación Stouffer/Fisher) da **p ≈ 0.061 (NS)**, y tras corrección BH-FDR sobre las 3 comparaciones principales **ninguna sobrevive** (q ≥ 0.10). Lectura conservadora: **no hay evidencia estadísticamente concluyente** en ninguna dirección.
 3. **Confound DSP crítico (detectado en revisión externa)**: los ejes de modulación de STFT (Nyquist 1.56 Hz, 13 bins reales interpolados a 45) y CWT (Nyquist 100 Hz, 180 bins subsampleados a 45) NO codifican el mismo contenido espectral. La comparación STFT vs CWT en este TFM está confundida con esta asimetría de DSP, no controlada por diseño (ver §3.3, §5.1, §5.5).
 4. **El método de saliency afecta cualitativamente el ranking**: con Grad-CAM la tendencia se invierte (CWT > STFT en AUC, no significativo, p=0.195). Esto sugiere que las comparaciones STFT vs CWT son sensibles al método de saliency usado; la conclusión "X supera a Y" depende del pipeline completo, no solo de la transformada T-F.
 5. **Análisis exploratorio (post-hoc)**: STFT + vainilla concentra ~89% de saliency en bandas alpha (61%) + theta (28%), coherente con literatura EEG-AD (Fraga 2013). Los canales más informativos son occipito-temporales (O1, O2, T5, T6). Estos hallazgos son post-hoc y deben validarse en otros datasets. **La atribución por banda no se reporta para CWT** porque su eje portador es geomspace y la asignación píxel→banda requeriría rehacer el mapeo (ver §5.5).
@@ -195,7 +195,7 @@ Para cada fold del LOSO:
 | STFT | 0.656 ± 0.024 | 0.642 ± 0.020 | 0.741 ± 0.029 | 0.552 ± 0.034 | 0.695 ± 0.022 |
 | CWT | 0.626 ± 0.071 | 0.611 ± 0.070 | 0.602 ± 0.060 | 0.655 ± 0.087 | 0.590 ± 0.069 |
 
-**DeLong pooled** (mediana entre seeds): AUC STFT − CWT = +0.095, p = 0.252 (NS).
+**DeLong por seed** (combinado Stouffer): AUC STFT − CWT ≈ +0.10, p = 0.266 (NS).
 
 La CNN sola opera apenas mejor que el "baseline trivial" (0.554 si siempre predice AD). Esto es coherente con su rol en el pipeline: la CNN no es el clasificador final, sino el extractor de regiones discriminativas vía saliency. Su accuracy modesta es esperada con dropout 0.85.
 
@@ -206,7 +206,7 @@ La CNN sola opera apenas mejor que el "baseline trivial" (0.554 si siempre predi
 | STFT | 0.662 ± 0.031 | 0.643 ± 0.041 | 0.713 ± 0.020 |
 | CWT | **0.703 ± 0.009** | **0.687 ± 0.026** | **0.800 ± 0.010** |
 
-**DeLong pooled**: AUC CWT − STFT = +0.087, p = 0.195 (NS).
+**DeLong por seed** (combinado Stouffer): AUC CWT − STFT ≈ +0.09, p = 0.068 (NS).
 
 Con Grad-CAM, CWT tiende a ser mejor que STFT, pero la diferencia no alcanza significancia estadística con 3 seeds.
 
@@ -217,47 +217,9 @@ Con Grad-CAM, CWT tiende a ser mejor que STFT, pero la diferencia no alcanza sig
 | **STFT** | **0.764 ± 0.009** | **0.762 ± 0.011** | **0.856 ± 0.022** |
 | CWT | 0.677 ± 0.081 | 0.673 ± 0.094 | 0.778 ± 0.038 |
 
-**DeLong "pooled" (sobre mediana entre seeds, ensemble)**: AUC STFT − CWT = +0.078, p = 0.014.
+#### 4.3.1 Inferencia estadística: DeLong por seed + combinación
 
-> ⚠️ **Sub-óptimo metodológicamente**: este p-value se calcula sobre la mediana de scores entre 3 seeds (que es un ensemble), no sobre la distribución real por seed. El revisor externo señaló esto como artefacto y la inferencia correcta se reporta en §4.3.2bis. **El titular "p=0.014" debe leerse con esta caveat: corresponde al ensemble, no a la replicación de la diferencia**.
-
-#### 4.3.1 Corrección por múltiples comparaciones (BH-FDR)
-
-Las tres comparaciones principales (CNN, SVM Grad-CAM, SVM vainilla) corregidas por multiplicidad. Reportamos **dos versiones** de BH-FDR α=0.05, ya que el p-value base depende de cómo se agreguen los seeds:
-
-**Versión A — DeLong "pooled" (sub-óptima, ensemble sobre mediana entre seeds)**
-
-| Comparación | p (pooled) | BH-FDR q | Sig. tras corrección |
-|---|---|---|---|
-| SVM vainilla STFT vs CWT | 0.014 | **0.042** | ✓ marginal |
-| SVM Grad-CAM STFT vs CWT | 0.195 | 0.293 | ✗ |
-| CNN STFT vs CWT | 0.252 | 0.252 | ✗ |
-
-**Versión B — DeLong por seed + Stouffer combinado (recomendada, ver §4.3.2bis)**
-
-| Comparación | p (Stouffer combined) | BH-FDR q | Sig. tras corrección |
-|---|---|---|---|
-| SVM vainilla STFT vs CWT | 0.061 | 0.102 | ✗ |
-| SVM Grad-CAM STFT vs CWT | 0.068 | 0.102 | ✗ |
-| CNN STFT vs CWT | 0.266 | 0.266 | ✗ |
-
-**Conclusión actualizada**: bajo la inferencia metodológicamente correcta (versión B), **ninguna comparación sobrevive BH-FDR**. La aparente significancia marginal de la versión A (q=0.042 en SVM vainilla) es artefacto del ensemble-de-mediana. La lectura definitiva del estudio es **ausencia de evidencia concluyente para superioridad de cualquier método T-F en este pipeline**.
-
-#### 4.3.2 Wilcoxon por seed individual (consistencia)
-
-Wilcoxon pareado de scores por sujeto en cada seed individual (SVM vainilla, STFT vs CWT):
-
-| seed | Wilcoxon p |
-|---|---|
-| s0 | 0.893 (NS) |
-| s1 | 0.025 (sig sin corregir) |
-| s2 | 0.338 (NS) |
-
-**Inconsistente entre semillas**: solo en seed=1 hay diferencia significativa, perdida con Bonferroni intra-seed (α=0.0167).
-
-#### 4.3.2bis DeLong por seed + combinación (lectura recomendada por revisión externa)
-
-Repitiendo DeLong AUC pareado **dentro de cada seed por separado** (n=65 sujetos por test) y combinando con Stouffer/Fisher:
+La comparación de AUC entre STFT y CWT se hace con el test de DeLong pareado **dentro de cada seed por separado** (n=65 sujetos en cada test LOSO), y luego se combinan los tres p-values entre seeds con los métodos de Stouffer y Fisher. Este es el procedimiento correcto: preserva la variabilidad real entre inicializaciones en lugar de colapsarla en un ensemble.
 
 | seed | AUC STFT | AUC CWT | Δ AUC | DeLong p |
 |---|---|---|---|---|
@@ -265,13 +227,37 @@ Repitiendo DeLong AUC pareado **dentro de cada seed por separado** (n=65 sujetos
 | s1 | 0.844 | 0.739 | +0.105 | 0.051 |
 | s2 | 0.881 | 0.781 | +0.101 | 0.072 |
 
-**Combinación de p-values entre seeds:**
-- Stouffer: z=1.55, p combinado = **0.061**
-- Fisher: χ²=12.03, p combinado = **0.061**
+**Combinación de p-values entre seeds (SVM vainilla, STFT vs CWT):**
+- Stouffer: z = 1.55, p combinado = **0.061**
+- Fisher: χ² = 12.03, p combinado = **0.061**
 
-**Esto es la inferencia metodológicamente correcta**. Con DeLong por seed + combinación, **el resultado es NO significativo (p≈0.06)** al α=0.05, aunque marginal. Esto contrasta con el "p=0.014 pooled" de la mediana-de-seeds que infló la separación.
+Ningún seed individual alcanza significancia al α=0.05, y la combinación tampoco (p ≈ 0.061). El AUC medio mayor de STFT (0.856 vs 0.778) y su menor varianza (±0.022 vs ±0.038) son consistentes con una posible ventaja, pero **la inferencia formal no alcanza significancia**.
 
-**Lectura final actualizada**: **no se encuentra evidencia estadísticamente concluyente** de diferencia entre STFT y CWT en este pipeline. El AUC medio mayor de STFT (0.856 vs 0.778) y su menor varianza (±0.022 vs ±0.038) son consistentes con una posible ventaja, pero la inferencia formal con DeLong por seed + combinación no alcanza significancia tras corrección por multiplicidad. La hipótesis original (CWT > STFT) sigue sin obtener evidencia a favor, pero **tampoco se prueba lo contrario con rigor estadístico**.
+#### 4.3.2 Corrección por múltiples comparaciones (BH-FDR)
+
+Las tres comparaciones principales (CNN, SVM Grad-CAM, SVM vainilla) se corrigen por multiplicidad con Benjamini-Hochberg (α=0.05) sobre los p-values combinados (Stouffer):
+
+| Comparación | p (Stouffer) | BH-FDR q | Sig. tras corrección |
+|---|---|---|---|
+| SVM vainilla STFT vs CWT | 0.061 | 0.102 | ✗ |
+| SVM Grad-CAM STFT vs CWT | 0.068 | 0.102 | ✗ |
+| CNN STFT vs CWT | 0.266 | 0.266 | ✗ |
+
+**Ninguna comparación sobrevive BH-FDR** (q ≥ 0.10). La lectura definitiva es **ausencia de evidencia concluyente para superioridad de cualquier método T-F en este pipeline**.
+
+#### 4.3.3 Wilcoxon por seed individual (consistencia)
+
+Wilcoxon pareado de scores por sujeto en cada seed individual (SVM vainilla, STFT vs CWT) corrobora la falta de un efecto consistente:
+
+| seed | Wilcoxon p |
+|---|---|
+| s0 | 0.893 (NS) |
+| s1 | 0.025 (sig sin corregir) |
+| s2 | 0.338 (NS) |
+
+Solo en seed=1 hay diferencia significativa, perdida con Bonferroni intra-seed (α=0.0167). La señal no se replica entre semillas.
+
+**Lectura final**: **no se encuentra evidencia estadísticamente concluyente** de diferencia entre STFT y CWT en este pipeline. La hipótesis original (CWT > STFT) no obtiene evidencia a favor, pero **tampoco se prueba lo contrario con rigor estadístico**.
 
 ### 4.4 Comparación con el paper Lopes 2023
 
@@ -361,7 +347,7 @@ Jaccard entre máscaras de patches de pares aleatorios de folds (200 pares por c
 
 **Respuesta matizada: no se encuentra evidencia a favor de CWT bajo esta configuración**. La hipótesis original (CWT > STFT por mejor resolución en bajas frecuencias) no obtiene soporte, pero **tampoco se prueba formalmente la inferioridad intrínseca de CWT**. Cuatro líneas de observación:
 
-1. **DeLong AUC pooled** (SVM vainilla): STFT − CWT = +0.078, p = 0.014. Tras BH-FDR sobre las 3 comparaciones principales, p ajustado = 0.042, marginalmente significativo.
+1. **DeLong AUC por seed + combinación** (SVM vainilla): p por seed = 0.660, 0.051, 0.072; Stouffer/Fisher combinado = 0.061 (NS). Tras BH-FDR sobre las 3 comparaciones principales, ninguna sobrevive (q ≥ 0.10).
 2. **Wilcoxon por seed**: 0.893, 0.025, 0.338 — inconsistente entre semillas, sin replicación clara del efecto.
 3. **Varianza entre seeds**: STFT vainilla tiene SD baja (acc ±0.009, AUC ±0.022), CWT vainilla muy alta (acc ±0.081, AUC ±0.038), indicando que CWT es menos estable bajo este pipeline.
 4. **Pipeline-dependent**: con saliency Grad-CAM la tendencia se invierte (CWT > STFT en AUC, p=0.195 NS).
@@ -426,7 +412,7 @@ Lo defendible es que **el pipeline replicado funciona y produce métricas compat
 
 7. **Resolución STFT real ≠ nominal**: nperseg=128 a fs=200 Hz da Δf = 1.5625 Hz, no 1 Hz exacto. El "45×45 a 1 Hz" del paper se obtiene mediante el resize bilinear posterior, que es interpolación.
 
-8. **DeLong sobre mediana entre seeds (no por seed)**: el p=0.014 reportado en §4.3 proviene de calcular DeLong sobre el ensemble (mediana de scores entre 3 seeds), no sobre la distribución real por seed. Esto **infla la separación aparente** porque la mediana reduce ruido entre seeds. La inferencia correcta sería DeLong por seed + combinación (Fisher o Stouffer), o un modelo de efectos mixtos. El Wilcoxon por seed que sí está reportado (0.893, 0.025, 0.338) muestra la inconsistencia real.
+8. **Inferencia entre seeds con solo 3 réplicas**: la comparación usa DeLong por seed + combinación (Stouffer/Fisher), que es el procedimiento correcto, pero con 3 seeds tiene potencia limitada. Un modelo de efectos mixtos con ≥10 seeds sería más robusto. El Wilcoxon por seed (0.893, 0.025, 0.338) corrobora la inconsistencia real del efecto entre inicializaciones.
 
 9. **CNN sub-entrenada**: dropout 0.85 es muy agresivo. La CNN sola opera apenas mejor que baseline trivial (~0.55). No exploramos dropout más bajo.
 
@@ -463,7 +449,7 @@ Más allá de la replicación, este TFM aporta:
 
 2. **La comparación STFT vs CWT no es concluyente y está confundida por DSP**. Tres caveats independientes:
 
-   - **Inferencia estadística**: con saliency vainilla, AUC media de STFT (0.856 ± 0.022) supera la de CWT (0.778 ± 0.038), pero **DeLong por seed + combinación Stouffer/Fisher da p ≈ 0.061 (NS)** y **tras BH-FDR sobre las 3 comparaciones principales ninguna sobrevive (q ≥ 0.10)**. El "p=0.014 pooled" sobre la mediana entre seeds (ensemble) sobreestima la separación; la inferencia metodológicamente correcta NO alcanza significancia al α=0.05. Ver §4.3.1 (versión B) y §4.3.2bis.
+   - **Inferencia estadística**: con saliency vainilla, AUC media de STFT (0.856 ± 0.022) supera la de CWT (0.778 ± 0.038), pero **DeLong por seed + combinación Stouffer/Fisher da p ≈ 0.061 (NS)** y **tras BH-FDR sobre las 3 comparaciones principales ninguna sobrevive (q ≥ 0.10)**. La inferencia formal NO alcanza significancia al α=0.05. Ver §4.3.1–§4.3.2.
    - **Confound DSP del eje de modulación**: STFT (Nyquist 1.56 Hz, 13 bins reales interpolados a 45) y CWT (Nyquist 100 Hz, 180 bins subsampleados a 45) codifican contenido espectral distinto en su eje vertical. La supuesta ventaja de STFT puede deberse en parte a esta asimetría no controlada (ver §3.3, §5.1). Una comparación justa requeriría unificar el `dt` temporal post-T-F.
    - **Sensibilidad a hiperparámetros**: resize 45×45 e hiperparámetros específicos de CWT-Morlet (cmor1.5-1.0, 32 escalas) son configuraciones sin tuning exhaustivo. La hipótesis original "CWT > STFT" no obtiene evidencia, pero **tampoco se prueba la dirección opuesta con rigor estadístico**.
 

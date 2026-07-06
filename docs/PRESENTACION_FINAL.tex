@@ -173,18 +173,18 @@ Anti-leakage estricto: todo se calcula \textbf{por fold}.
 \end{itemize}
 
 \vfill
-\begin{block}{Y a primera vista\ldots}
-\small STFT parecía \textbf{superar} a CWT
-(DeLong $p = 0.014$). \\
-\textit{Titular tentador: ``STFT gana''.}
+\begin{block}{La pregunta que sigue}
+\small STFT tiene \textbf{mayor AUC media} que CWT
+($0.856$ vs $0.778$). \\
+\textit{Pero ¿esa diferencia es real, o es ruido entre semillas?}
 \end{block}
 \end{column}
 \end{columns}
 
 \vfill
 \centering\small
-\textbf{Replicación funcional: exitosa.} Pero antes de anunciar que
-STFT gana, había que hacer bien la estadística.
+\textbf{Replicación funcional: exitosa.} Antes de afirmar que una
+transformada gana, hay que probarlo bien.
 
 \end{frame}
 
@@ -196,16 +196,16 @@ STFT gana, había que hacer bien la estadística.
 \begin{columns}[T]
 \begin{column}{0.50\textwidth}
 \textbf{Freno 1 --- La estadística.}
-\small El $p=0.014$ se calculaba sobre la \emph{mediana} entre seeds
-(un ensemble que infla la señal). Haciéndolo bien --- DeLong
-\textbf{por seed} + combinación:
+\small La inferencia correcta es DeLong AUC \textbf{por seed}
+(preservando la varianza entre inicializaciones) y combinando con
+Stouffer/Fisher, con corrección BH-FDR:
 
 \begin{table}
 \centering
 \scriptsize
 \begin{tabular}{l c c}
 \toprule
-Comparación (vainilla) & $p$ correcto & BH-FDR $q$ \\
+Comparación (vainilla) & $p$ (Stouffer) & BH-FDR $q$ \\
 \midrule
 SVM STFT vs CWT      & $0.061$ & $0.102$ \\
 SVM Grad-CAM STFT vs CWT & $0.068$ & $0.102$ \\

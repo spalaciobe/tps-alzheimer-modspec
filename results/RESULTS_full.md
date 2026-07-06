@@ -61,19 +61,9 @@
 
 ---
 
-## Tests estadísticos pareados con corrección BH-FDR (pooled sobre 3 seeds)
+## Tests estadísticos pareados — DeLong AUC por seed + combinación
 
-| Comparación | Wilcoxon p por seed | DeLong AUC Δ | DeLong p (pooled) | BH-FDR p ajustado | Sig. tras corrección |
-|---|---|---|---|---|---|
-| **SVM Vainilla STFT vs CWT** | 0.893, 0.025, 0.338 | **+0.078 (STFT mayor)** | **0.014** | **0.042** | ✓ marginal |
-| SVM Grad-CAM STFT vs CWT | 0.727, 0.863, 0.091 | −0.077 (CWT mayor) | 0.195 | 0.293 | ✗ |
-| CNN STFT vs CWT | 0.006, 0.401, 0.095 | +0.095 | 0.252 | 0.252 | ✗ |
-
-> ⚠️ El "DeLong pooled" se calcula sobre la **mediana de scores entre 3 seeds** (un ensemble), no sobre la distribución real por seed. Esto puede inflar la significancia. La inferencia correcta se reporta abajo.
-
-## Tests estadísticos pareados — DeLong POR SEED + combinación (lectura recomendada)
-
-Repitiendo DeLong AUC pareado **dentro de cada seed** (n=65 sujetos cada uno) y combinando los 3 p-values con Stouffer/Fisher:
+Test de DeLong pareado **dentro de cada seed** (n=65 sujetos cada uno) y combinación de los 3 p-values con Stouffer/Fisher. Es el procedimiento correcto: preserva la variabilidad real entre inicializaciones.
 
 | seed | AUC STFT | AUC CWT | Δ AUC | DeLong p |
 |---|---|---|---|---|
@@ -87,20 +77,19 @@ Repitiendo DeLong AUC pareado **dentro de cada seed** (n=65 sujetos cada uno) y 
 
 **BH-FDR sobre p combinados (3 comparaciones principales):**
 
-| Comparación | p Stouffer | BH-FDR q | Sig. |
-|---|---|---|---|
-| SVM vainilla STFT vs CWT | 0.061 | 0.102 | ✗ |
-| SVM Grad-CAM STFT vs CWT | 0.068 | 0.102 | ✗ |
-| CNN STFT vs CWT | 0.266 | 0.266 | ✗ |
+| Comparación | p Stouffer | Wilcoxon p por seed | BH-FDR q | Sig. |
+|---|---|---|---|---|
+| SVM vainilla STFT vs CWT | 0.061 | 0.893, 0.025, 0.338 | 0.102 | ✗ |
+| SVM Grad-CAM STFT vs CWT | 0.068 | 0.727, 0.863, 0.091 | 0.102 | ✗ |
+| CNN STFT vs CWT | 0.266 | 0.006, 0.401, 0.095 | 0.266 | ✗ |
 
-**Ninguna comparación sobrevive BH-FDR α=0.05 bajo la inferencia metodológicamente correcta.**
+**Ninguna comparación sobrevive BH-FDR α=0.05.**
 
-**Lectura final corregida**:
+**Lectura final**:
 
 - DeLong por seed da p = 0.66, 0.05, 0.07 (ninguno significativo individualmente al α=0.05); combinación = **p ≈ 0.061 (NS)**.
-- El "DeLong p=0.014 pooled" sobreestima la separación al operar sobre la mediana-de-seeds (ensemble).
-- **Por tanto: NO hay evidencia estadísticamente concluyente** de que SVM vainilla con STFT supere a CWT en este pipeline.
-- La hipótesis original del proyecto (CWT > STFT) **no obtiene evidencia a favor**, y la dirección opuesta tampoco alcanza significancia formal una vez se hace inferencia por seed.
+- **NO hay evidencia estadísticamente concluyente** de que SVM vainilla con STFT supere a CWT en este pipeline.
+- La hipótesis original del proyecto (CWT > STFT) **no obtiene evidencia a favor**, y la dirección opuesta tampoco alcanza significancia formal.
 
 ## ⚠️ Confound DSP crítico — eje de modulación incomparable
 

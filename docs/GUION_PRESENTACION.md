@@ -66,7 +66,7 @@ Sebastián Palacio Betancur · UNAL Medellín · TPS
 
 ## Slide 4 — El titular · (1:40–2:25) · 45 s
 
-**Idea**: la replicación funciona; y a primera vista STFT parecía ganar.
+**Idea**: la replicación funciona; STFT tiene mayor AUC media — pero falta probar que sea real.
 
 > "Esto es lo primero, y es una buena noticia: la **replicación
 > funciona**. La mejor configuración —SVM vainilla con STFT, que es la
@@ -74,10 +74,11 @@ Sebastián Palacio Betancur · UNAL Medellín · TPS
 > paper original, pero sobre datos públicos independientes. Eso ya
 > justifica el trabajo.
 >
-> Y fíjense: a primera vista, **STFT parecía superar a CWT**, con un
-> p-valor de 0.014. El titular tentador era 'STFT gana'.
+> Y fíjense: la STFT tiene **mayor AUC media** que la CWT, 0.856 contra
+> 0.778. La pregunta natural es: ¿esa diferencia es **real**, o es solo
+> ruido entre semillas?
 >
-> Pero antes de anunciar eso, tenía que hacer bien la estadística."
+> Antes de afirmar que una transformada gana, hay que probarlo bien."
 
 *Transición (clave, baja el tono)*: "Y ahí vino el giro."
 
@@ -89,12 +90,11 @@ Sebastián Palacio Betancur · UNAL Medellín · TPS
 
 > "El rigor me obligó a frenar dos veces.
 >
-> **Freno uno, la estadística.** Ese p de 0.014 estaba calculado sobre la
-> *mediana* entre las tres semillas —que es un ensemble, y eso infla la
-> señal—. Cuando lo hago correctamente, el test DeLong **por semilla** y
-> luego combinado, y corrijo por comparaciones múltiples… **ninguna
-> comparación sobrevive**. Ninguna. El resultado real es 'no
-> concluyente'.
+> **Freno uno, la estadística.** La inferencia correcta es el test DeLong
+> **por semilla** —preservando la variabilidad entre inicializaciones—, y
+> luego combinando los p-valores. Cuando lo hago así y corrijo por
+> comparaciones múltiples… **ninguna comparación sobrevive**. Ninguna. El
+> resultado real es 'no concluyente'.
 >
 > **Freno dos, y este es de procesamiento de señales.** Las dos imágenes
 > son 45 por 45, se ven iguales… pero su **eje de modulación no mide lo

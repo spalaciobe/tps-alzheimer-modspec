@@ -122,12 +122,10 @@ CNN end-to-end + CWT &
 
     \item \textbf{La hipótesis original (CWT > STFT) no obtiene
     evidencia a favor, pero la dirección opuesta tampoco}: con saliency
-    vainilla, AUC media de STFT supera la de CWT, pero
-    DeLong por seed + combinación Stouffer/Fisher
+    vainilla, AUC media de STFT supera la de CWT, pero la inferencia
+    formal (DeLong AUC por seed + combinación Stouffer/Fisher)
     da $p \approx 0.061$ (NS), y tras BH-FDR sobre las 3~comparaciones
-    principales \emph{ninguna} sobrevive ($q \geq 0.10$). El
-    ``DeLong pooled $p=0.014$'' calculado sobre la mediana entre seeds
-    (ensemble) sobreestima la separación.
+    principales \emph{ninguna} sobrevive ($q \geq 0.10$).
 
     \item \textbf{Confound DSP del eje de modulación (revisión externa)}:
     los ejes de modulación de STFT (Nyquist $1.56$~Hz, 13~bins reales
@@ -442,7 +440,7 @@ CWT  & $0.626 \pm 0.071$ & $0.611 \pm 0.070$ & $0.602 \pm 0.060$ & $0.655 \pm 0.
 \caption{CNN end-to-end, multi-seed.}
 \end{table}
 
-\textbf{DeLong pooled} (sobre mediana entre seeds): $\Delta\text{AUC}_{\text{STFT}-\text{CWT}} = +0.095$, $p = 0.252$ (NS).
+\textbf{DeLong por seed} (combinado Stouffer): $\Delta\text{AUC}_{\text{STFT}-\text{CWT}} \approx +0.10$, $p = 0.266$ (NS).
 
 La CNN sola opera apenas mejor que un \emph{baseline trivial} (0.554 si
 siempre predice AD). Esto es coherente con su rol en el pipeline:
@@ -466,7 +464,7 @@ CWT  & $\mathbf{0.703 \pm 0.009}$ & $\mathbf{0.687 \pm 0.026}$ & $\mathbf{0.800 
 \caption{SVM saliency Grad-CAM, multi-seed.}
 \end{table}
 
-\textbf{DeLong pooled}: $\Delta\text{AUC}_{\text{CWT}-\text{STFT}} = +0.087$, $p = 0.195$ (NS).
+\textbf{DeLong por seed} (combinado Stouffer): $\Delta\text{AUC}_{\text{CWT}-\text{STFT}} \approx +0.09$, $p = 0.068$ (NS).
 Con Grad-CAM, CWT tiende a ser mejor que STFT, pero la diferencia no
 alcanza significancia con 3~seeds.
 
@@ -487,103 +485,14 @@ CWT  & $0.677 \pm 0.081$ & $0.673 \pm 0.094$ & $0.778 \pm 0.038$ \\
 \label{tab:svm_vanilla}
 \end{table}
 
-\textbf{DeLong ``pooled''} (sobre mediana entre seeds, ensemble):
-$\Delta\text{AUC} = +0.078$, $p = 0.014$.
-
-\begin{warningbox}[Sub-óptimo metodológicamente]
-Este $p$-value se calcula sobre la mediana de scores entre 3~seeds (un
-ensemble), no sobre la distribución real por seed.
-La inferencia correcta se reporta en §\ref{sec:delong_per_seed}.
-\textbf{El titular ``$p = 0.014$'' debe leerse con esta caveat:
-corresponde al ensemble, no a la replicación de la diferencia}.
-\end{warningbox}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.95\textwidth]{figures_informe_final/svm_vanilla_auc_boxplot.png}
-    \caption{Distribución de AUC por sujeto-test (LOSO) para SVM
-    vainilla con STFT y CWT, agregada a través de 3~seeds. La
-    superposición visible entre ambas distribuciones es coherente
-    con la inferencia $p \approx 0.06$ (NS) reportada en
-    §\ref{sec:delong_per_seed}.}
-    \label{fig:svm_vanilla_boxplot}
-\end{figure}
-
-\subsubsection{Corrección por múltiples comparaciones (BH-FDR)}
-\label{sec:bhfdr}
-
-Las tres comparaciones principales (CNN, SVM Grad-CAM, SVM vainilla)
-corregidas por multiplicidad. Reportamos \textbf{dos versiones} de
-BH-FDR ($\alpha=0.05$), ya que el $p$-value base depende de cómo se
-agreguen los seeds.
-
-\textbf{Versión A — DeLong ``pooled'' (sub-óptima, ensemble sobre
-mediana entre seeds)}:
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lccc}
-\toprule
-Comparación & $p$ (pooled) & BH-FDR $q$ & Sig. tras corrección \\
-\midrule
-SVM vainilla STFT vs CWT & $0.014$ & $\mathbf{0.042}$ & \checkmark\ marginal \\
-SVM Grad-CAM STFT vs CWT & $0.195$ & $0.293$ & \texttimes \\
-CNN STFT vs CWT & $0.252$ & $0.252$ & \texttimes \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Versión B — DeLong por seed + Stouffer combinado (recomendada)}:
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lccc}
-\toprule
-Comparación & $p$ (Stouffer combined) & BH-FDR $q$ & Sig. tras corrección \\
-\midrule
-SVM vainilla STFT vs CWT & $0.061$ & $0.102$ & \texttimes \\
-SVM Grad-CAM STFT vs CWT & $0.068$ & $0.102$ & \texttimes \\
-CNN STFT vs CWT & $0.266$ & $0.266$ & \texttimes \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Conclusión actualizada}: bajo la inferencia metodológicamente
-correcta (versión B), \textbf{ninguna comparación sobrevive BH-FDR}.
-La aparente significancia marginal de la versión A ($q = 0.042$ en
-SVM vainilla) es artefacto del ensemble-de-mediana. La lectura
-definitiva del estudio es \textbf{ausencia de evidencia concluyente
-para superioridad de cualquier método T-F en este pipeline}.
-
-\subsubsection{Wilcoxon por seed individual (consistencia)}
-
-Wilcoxon pareado de scores por sujeto en cada seed individual
-(SVM vainilla, STFT vs CWT):
-
-\begin{center}
-\small
-\begin{tabular}{cc}
-\toprule
-seed & Wilcoxon $p$ \\
-\midrule
-$s_0$ & $0.893$ (NS) \\
-$s_1$ & $0.025$ (sig. sin corregir) \\
-$s_2$ & $0.338$ (NS) \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\textbf{Inconsistente entre semillas}: solo en $s_1$ hay diferencia
-significativa, perdida tras Bonferroni intra-seed ($\alpha = 0.0167$).
-
-\subsubsection{DeLong por seed + combinación (lectura recomendada por
-revisión externa)}
+\subsubsection{Inferencia estadística: DeLong por seed + combinación}
 \label{sec:delong_per_seed}
 
-Repitiendo DeLong AUC pareado \emph{dentro de cada seed por separado}
-(n=65~sujetos por test) y combinando con Stouffer/Fisher:
+La comparación de AUC entre STFT y CWT se hace con DeLong pareado
+\emph{dentro de cada seed por separado} (n=65~sujetos en cada test
+LOSO), combinando luego los tres $p$-values entre seeds con Stouffer y
+Fisher. Es el procedimiento correcto: preserva la variabilidad real
+entre inicializaciones en lugar de colapsarla en un ensemble.
 
 \begin{table}[H]
 \centering
@@ -606,9 +515,66 @@ $s_2$ & $0.881$ & $0.781$ & $+0.101$ & $0.072$ \\
     \item Fisher: $\chi^2 = 12.03$, $p_{\text{combinado}} = \mathbf{0.061}$.
 \end{itemize}
 
-\textbf{Esto es la inferencia metodológicamente correcta}. Con DeLong
-por seed + combinación, el resultado es \textbf{NO significativo}
-($p \approx 0.06$) al $\alpha = 0.05$, aunque marginal.
+Ningún seed individual alcanza significancia al $\alpha = 0.05$, y la
+combinación tampoco ($p \approx 0.061$). El AUC medio mayor de STFT y su
+menor varianza son consistentes con una posible ventaja, pero la
+inferencia formal \textbf{no alcanza significancia}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures_informe_final/svm_vanilla_auc_boxplot.png}
+    \caption{Distribución de AUC por sujeto-test (LOSO) para SVM
+    vainilla con STFT y CWT, agregada a través de 3~seeds. La
+    superposición entre ambas distribuciones es coherente con la
+    inferencia $p \approx 0.06$ (NS).}
+    \label{fig:svm_vanilla_boxplot}
+\end{figure}
+
+\subsubsection{Corrección por múltiples comparaciones (BH-FDR)}
+\label{sec:bhfdr}
+
+Las tres comparaciones principales (CNN, SVM Grad-CAM, SVM vainilla) se
+corrigen por multiplicidad con Benjamini-Hochberg ($\alpha=0.05$) sobre
+los $p$-values combinados (Stouffer):
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+Comparación & $p$ (Stouffer) & BH-FDR $q$ & Sig. tras corrección \\
+\midrule
+SVM vainilla STFT vs CWT & $0.061$ & $0.102$ & \texttimes \\
+SVM Grad-CAM STFT vs CWT & $0.068$ & $0.102$ & \texttimes \\
+CNN STFT vs CWT & $0.266$ & $0.266$ & \texttimes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Ninguna comparación sobrevive BH-FDR} ($q \geq 0.10$). La lectura
+definitiva es \textbf{ausencia de evidencia concluyente para superioridad
+de cualquier método T-F en este pipeline}.
+
+\subsubsection{Wilcoxon por seed individual (consistencia)}
+
+Wilcoxon pareado de scores por sujeto en cada seed individual
+(SVM vainilla, STFT vs CWT) corrobora la falta de un efecto consistente:
+
+\begin{center}
+\small
+\begin{tabular}{cc}
+\toprule
+seed & Wilcoxon $p$ \\
+\midrule
+$s_0$ & $0.893$ (NS) \\
+$s_1$ & $0.025$ (sig. sin corregir) \\
+$s_2$ & $0.338$ (NS) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Solo en $s_1$ hay diferencia significativa, perdida tras Bonferroni
+intra-seed ($\alpha = 0.0167$). La señal no se replica entre semillas.
 
 \subsection{Comparación con el paper Lopes 2023}
 
@@ -771,9 +737,10 @@ bajo esta configuración, pero tampoco se prueba formalmente la
 inferioridad intrínseca de CWT}. Cuatro líneas de observación:
 
 \begin{enumerate}[leftmargin=*]
-    \item \textbf{DeLong AUC pooled} (SVM vainilla): STFT~$-$~CWT
-    $= +0.078$, $p = 0.014$ (que se reduce a NS bajo la inferencia
-    correcta por seed, §\ref{sec:delong_per_seed}).
+    \item \textbf{DeLong AUC por seed + combinación} (SVM vainilla):
+    $p$ por seed $= 0.660, 0.051, 0.072$; Stouffer/Fisher combinado
+    $= 0.061$ (NS); tras BH-FDR ninguna comparación sobrevive
+    (§\ref{sec:delong_per_seed}).
     \item \textbf{Wilcoxon por seed}: $0.893, 0.025, 0.338$ —
     inconsistente entre semillas.
     \item \textbf{Varianza entre seeds}: STFT vainilla tiene SD baja
@@ -927,9 +894,10 @@ no es evidencia de ausencia}.
     32~escalas log; sin cone-of-influence; sin tuning específico.
     \item \textbf{Resolución STFT real $\neq$ nominal}:
     $\Delta f = 1.5625$~Hz, no 1~Hz exacto.
-    \item \textbf{DeLong sobre mediana entre seeds infla la
-    separación}; inferencia correcta vía Stouffer/Fisher
-    (§\ref{sec:delong_per_seed}).
+    \item \textbf{Inferencia entre seeds con solo 3 réplicas}: DeLong por
+    seed + combinación (Stouffer/Fisher) es correcto pero de potencia
+    limitada; un modelo de efectos mixtos con $\geq 10$ seeds sería más
+    robusto.
     \item \textbf{CNN sub-entrenada}: dropout 0.85 muy agresivo.
     \item \textbf{Sin validación externa}: solo \texttt{ds004504}.
     \item \textbf{Tareas binarias solamente}: el paper original tiene
