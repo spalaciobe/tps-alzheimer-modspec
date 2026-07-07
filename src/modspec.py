@@ -97,11 +97,25 @@ def _decimate_power_envelope(P: np.ndarray, q: int, axis: int) -> np.ndarray:
     `padtype='line'` reduce el transitorio de borde frente al zero-pad. La
     potencia no puede ser negativa, así que se recorta a >=0 el leve undershoot
     del FIR (guarda de validez física).
+
+    MEMORIA: para un registro completo (T~156k muestras) el array (n_ch, F, T)
+    en float64 pesa ~0.8 GB y `resample_poly` asigna varias copias intermedias,
+    lo que puede agotar la RAM. Para acotar el pico, si P es ND se decima canal
+    por canal (eje 0) en float32 (la potencia no requiere float64). El resultado
+    es idéntico bit-a-bit por señal (resample_poly opera 1D-independiente por el
+    eje), solo cambia el pico de memoria.
     """
     if q < 2:
         return P
     from scipy.signal import resample_poly
-    out = resample_poly(P, up=1, down=q, axis=axis, padtype="line")
+    if P.ndim >= 3:
+        chans = []
+        for c in range(P.shape[0]):
+            dc = resample_poly(np.asarray(P[c], dtype=np.float32), up=1, down=q,
+                               axis=axis - 1, padtype="line")
+            chans.append(np.clip(dc, 0.0, None))
+        return np.stack(chans, axis=0)
+    out = resample_poly(np.asarray(P, dtype=np.float32), up=1, down=q, axis=axis, padtype="line")
     return np.clip(out, 0.0, None)
 
 

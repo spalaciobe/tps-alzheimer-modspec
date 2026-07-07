@@ -10,8 +10,8 @@ cd "D:/Universidad/Maestria/TPS/Proyecto"
 echo "=== [1/6] modspec cwt_fair (una vez para todas las seeds) ==="
 "$PY" scripts/02_compute_modspec.py --method cwt_fair --fs 200
 
-echo "=== [2/6] CNN LOSO cwt_fair seed=$SEED ==="
-"$PY" scripts/03_train_loso.py --method cwt_fair --fs 200 --seed "$SEED"
+echo "=== [2/6] CNN LOSO cwt_fair seed=$SEED (--no-bank: RAM constante ~2-3GB) ==="
+"$PY" scripts/03_train_loso.py --method cwt_fair --fs 200 --seed "$SEED" --no-bank
 
 echo "=== [3/6] saliency VAINILLA cwt_fair seed=$SEED (headline) ==="
 "$PY" scripts/04_extract_saliency_features.py --method cwt_fair --fs 200 --seed "$SEED" \
