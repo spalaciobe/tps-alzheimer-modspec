@@ -115,9 +115,9 @@ Sebastián Palacio Betancur · UNAL Medellín · TPS
 > hacia la STFT en las dos direcciones**.
 >
 > Con vainilla, la CWT estaba 0.078 de AUC por debajo de la STFT; con el eje
-> igualado, queda a solo 0.028. Con Grad-CAM, estaba 0.087 por encima; queda
-> a 0.056. En los dos casos, la brecha se reduce a la mitad o más apenas
-> controlo el eje.
+> igualado, queda a solo 0.028 —una reducción de ~64%—. Con Grad-CAM, estaba
+> 0.087 por encima; queda a 0.056 —~36%—. En los dos casos, igualar el eje
+> mueve la CWT hacia la STFT (más fuerte en vainilla que en Grad-CAM).
 >
 > Y estadísticamente: el test de DeLong entre STFT y CWT-fair da p de 0.32 y
 > 0.59 —no significativo—, y nada sobrevive la corrección por comparaciones

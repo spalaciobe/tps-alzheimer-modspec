@@ -106,7 +106,7 @@ Ver [`results/RESULTS_full.md`](results/RESULTS_full.md) y [`docs/INFORME_TFM.md
 | Métrica | Valor (n=3 seeds) |
 |---|---|
 | Accuracy | **0.764 ± 0.009** |
-| F1 macro | **0.762 ± 0.011** |
+| F1 macro | **0.760 ± 0.008** |
 | AUC | **0.856 ± 0.022** |
 
 Comparación con paper Lopes 2023: el paper reporta Acc 0.71 ± 0.02 en T2 (N vs AD). Este TFM obtiene cifras en el mismo rango (~+5 puntos) sobre datos públicos independientes, lo cual es **el objetivo de una replicación** — no una comparación numérica estricta (datasets y poblaciones diferentes).

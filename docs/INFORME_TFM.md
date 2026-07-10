@@ -18,14 +18,14 @@ Para separar el efecto de la **transformada** del de un **artefacto de DSP** en 
 
 | Clasificador | T-F | Acc | F1 | AUC |
 |---|---|---|---|---|
-| SVM vainilla (paper-faithful) | **STFT** | **0.764 ± 0.009** | **0.762 ± 0.011** | **0.856 ± 0.022** |
-| SVM vainilla | CWT nativa | 0.677 ± 0.081 | 0.673 ± 0.094 | 0.778 ± 0.038 |
+| SVM vainilla (paper-faithful) | **STFT** | **0.764 ± 0.009** | **0.760 ± 0.008** | **0.856 ± 0.022** |
+| SVM vainilla | CWT nativa | 0.677 ± 0.081 | 0.670 ± 0.085 | 0.778 ± 0.038 |
 | SVM vainilla | **CWT-fair** | 0.754 ± 0.046 | 0.750 ± 0.046 | **0.828 ± 0.031** |
-| SVM Grad-CAM | STFT | 0.662 ± 0.031 | 0.643 ± 0.041 | 0.713 ± 0.020 |
-| SVM Grad-CAM | CWT nativa | 0.703 ± 0.009 | 0.687 ± 0.026 | 0.800 ± 0.010 |
+| SVM Grad-CAM | STFT | 0.662 ± 0.031 | 0.643 ± 0.033 | 0.713 ± 0.020 |
+| SVM Grad-CAM | CWT nativa | 0.703 ± 0.009 | 0.697 ± 0.012 | 0.800 ± 0.010 |
 | SVM Grad-CAM | **CWT-fair** | 0.682 ± 0.054 | 0.673 ± 0.050 | 0.769 ± 0.045 |
-| CNN end-to-end | STFT | 0.656 ± 0.024 | 0.642 ± 0.020 | 0.695 ± 0.022 |
-| CNN end-to-end | CWT nativa | 0.626 ± 0.071 | 0.611 ± 0.070 | 0.590 ± 0.069 |
+| CNN end-to-end | STFT | 0.656 ± 0.024 | 0.647 ± 0.024 | 0.695 ± 0.022 |
+| CNN end-to-end | CWT nativa | 0.626 ± 0.071 | 0.625 ± 0.071 | 0.590 ± 0.069 |
 | CNN end-to-end | **CWT-fair** | 0.656 ± 0.062 | 0.655 ± 0.061 | 0.667 ± 0.067 |
 
 **Conclusiones clave (con matices estadísticos explícitos):**
@@ -40,7 +40,7 @@ Para separar el efecto de la **transformada** del de un **artefacto de DSP** en 
 
 5. **Análisis exploratorio (post-hoc)**: STFT + vainilla concentra ~89% de saliency en bandas alpha (61%) + theta (28%), coherente con literatura EEG-AD (Fraga 2013). Los canales más informativos son occipito-temporales (O1, O2, T5, T6). Post-hoc; validar en otros datasets. **La atribución por banda se reporta solo para STFT** (eje portador lineal); la CWT usa geomspace (ver §5.5).
 
-6. **Limitaciones reconocidas**: solo 3 seeds (poder estadístico modesto); grid search de patches heurístico (no nested CV); CWT-fair "iguala hacia abajo" el eje de modulación (descarta modulaciones rápidas — decisión defendible pero no única, ver §5.1); sesgo de género en el dataset (χ² p=0.039) con poder limitado (**ausencia de evidencia, no evidencia de ausencia**); baja consistencia de patches entre folds (Jaccard ≈ 0.05); saliency maps de STFT y CWT **estadísticamente ortogonales** (r ≈ −0.09 vainilla, −0.24 Grad-CAM).
+6. **Limitaciones reconocidas**: solo 3 seeds (poder estadístico modesto); grid search de patches heurístico (no nested CV); CWT-fair "iguala hacia abajo" el eje de modulación (descarta modulaciones rápidas — decisión defendible pero no única, ver §5.1); sesgo de género en el dataset (χ² p=0.039) con poder limitado (**ausencia de evidencia, no evidencia de ausencia**); baja consistencia de patches entre folds (Jaccard ≈ 0.05); saliency maps de STFT y CWT **débilmente correlacionados, cerca de cero** (r ≈ −0.09 vainilla, −0.24 Grad-CAM).
 
 ---
 
@@ -207,8 +207,8 @@ Cada tabla compara las **tres** representaciones T-F: STFT, CWT nativa y CWT-fai
 
 | T-F | Acc | F1 macro | AUC |
 |---|---|---|---|
-| STFT | 0.656 ± 0.024 | 0.642 ± 0.020 | 0.695 ± 0.022 |
-| CWT nativa | 0.626 ± 0.071 | 0.611 ± 0.070 | 0.590 ± 0.069 |
+| STFT | 0.656 ± 0.024 | 0.647 ± 0.024 | 0.695 ± 0.022 |
+| CWT nativa | 0.626 ± 0.071 | 0.625 ± 0.071 | 0.590 ± 0.069 |
 | **CWT-fair** | 0.656 ± 0.062 | 0.655 ± 0.061 | **0.667 ± 0.067** |
 
 Igualar el eje de modulación **recupera la mayor parte del déficit de la CWT** también en la CNN: AUC pasa de 0.590 (nativa) a 0.667 (fair), acercándose a STFT (0.695). La CNN sola opera cerca del baseline trivial (0.554 si siempre predice AD), coherente con su rol de extractor de regiones (no clasificador final) y su dropout 0.85.
@@ -217,8 +217,8 @@ Igualar el eje de modulación **recupera la mayor parte del déficit de la CWT**
 
 | T-F | Acc | F1 | AUC |
 |---|---|---|---|
-| STFT | 0.662 ± 0.031 | 0.643 ± 0.041 | 0.713 ± 0.020 |
-| CWT nativa | **0.703 ± 0.009** | **0.687 ± 0.026** | **0.800 ± 0.010** |
+| STFT | 0.662 ± 0.031 | 0.643 ± 0.033 | 0.713 ± 0.020 |
+| CWT nativa | **0.703 ± 0.009** | **0.697 ± 0.012** | **0.800 ± 0.010** |
 | CWT-fair | 0.682 ± 0.054 | 0.673 ± 0.050 | 0.769 ± 0.045 |
 
 Con Grad-CAM, la CWT **nativa** parecía la mejor (0.800). Pero al igualar el eje de modulación, CWT-fair baja a 0.769 — **acercándose a STFT**. La ventaja aparente de la CWT nativa era en parte el eje de modulación más rico, no la transformada. DeLong por seed (Stouffer): STFT vs CWT-fair p = **0.587**; CWT nativa vs CWT-fair p = **0.527** — ambas NS.
@@ -227,8 +227,8 @@ Con Grad-CAM, la CWT **nativa** parecía la mejor (0.800). Pero al igualar el ej
 
 | T-F | Acc | F1 | AUC |
 |---|---|---|---|
-| **STFT** | **0.764 ± 0.009** | **0.762 ± 0.011** | **0.856 ± 0.022** |
-| CWT nativa | 0.677 ± 0.081 | 0.673 ± 0.094 | 0.778 ± 0.038 |
+| **STFT** | **0.764 ± 0.009** | **0.760 ± 0.008** | **0.856 ± 0.022** |
+| CWT nativa | 0.677 ± 0.081 | 0.670 ± 0.085 | 0.778 ± 0.038 |
 | **CWT-fair** | 0.754 ± 0.046 | 0.750 ± 0.046 | **0.828 ± 0.031** |
 
 #### 4.3.1 Comparación justa: DeLong por seed + combinación
@@ -275,7 +275,7 @@ Solo en seed=1 hay diferencia significativa, perdida con Bonferroni intra-seed (
 |---|---|---|
 | N sujetos | 39 (20 N + 19 AD1) | 65 (29 HC + 36 AD) |
 | Accuracy | 0.71 ± 0.02 | **0.764 ± 0.009** |
-| F1 | 0.61 ± 0.02 | **0.762 ± 0.011** |
+| F1 | 0.61 ± 0.02 | **0.760 ± 0.008** |
 | AUC | no reportado | **0.856 ± 0.022** |
 
 **El TFM obtiene cifras en el rango del paper o ligeramente superiores**, pero la comparación NO es estricta: los datasets son distintos (privado vs ds004504), las poblaciones difieren en demografía/MMSE, y los anti-leakage no son idénticos (este TFM usa saliency y patches por fold, lo que el paper original no documenta explícitamente). Lo que se puede afirmar es que el pipeline **funciona en el mismo orden de magnitud** sobre datos públicos independientes, lo cual es el objetivo principal de una replicación.
@@ -375,7 +375,7 @@ Jaccard entre máscaras de patches de pares aleatorios de folds (200 pares por c
 
 ### 5.2 El método de saliency cambia el ranking aparente — pero también vía el confound
 
-**Hallazgo metodológico**: con la CWT **nativa**, el ranking se invierte según el método de saliency (Grad-CAM: CWT>STFT; vainilla: STFT>CWT). Pero esta sensibilidad **se atenúa con CWT-fair**: al quitar el confound del eje, las dos representaciones convergen bajo *ambos* métodos de saliency. Parte de la "dependencia del método de saliency" era, otra vez, el eje de modulación interactuando con cómo cada método pondera las regiones. Los saliency maps de STFT y CWT nativa son **estadísticamente ortogonales** (Pearson r ≈ −0.09 vainilla, −0.24 Grad-CAM; ningún p<0.05), lo que sigue indicando que descubren regiones distintas — pero eso ya no se traduce en una diferencia de desempeño una vez igualado el eje.
+**Hallazgo metodológico**: con la CWT **nativa**, el ranking se invierte según el método de saliency (Grad-CAM: CWT>STFT; vainilla: STFT>CWT). Pero esta sensibilidad **se atenúa con CWT-fair**: al quitar el confound del eje, las dos representaciones convergen bajo *ambos* métodos de saliency. Parte de la "dependencia del método de saliency" era, otra vez, el eje de modulación interactuando con cómo cada método pondera las regiones. Los saliency maps de STFT y CWT nativa están **débilmente correlacionados, cerca de cero** (Pearson r ≈ −0.09 vainilla, −0.24 Grad-CAM, promedio de 3 seeds; con n=3 no se puede afirmar independencia), lo que sigue indicando que descubren regiones distintas — pero eso ya no se traduce en una diferencia de desempeño una vez igualado el eje.
 
 ### 5.3 Replicación del paper
 
@@ -401,7 +401,7 @@ Lo defendible es que **el pipeline replicado funciona y produce métricas compat
 | Diferencia | — | — | — | **+0.129** | +0.088 |
 | Fisher exact F vs M | — | — | OR ≈ 0.375 | **p = 0.201** | Cohen h ≈ 0.35 |
 
-**Análisis de poder estadístico**: con un tamaño de efecto Cohen h ≈ 0.35 (moderado), detectar la diferencia observada al 80% de poder y α=0.05 requeriría aproximadamente **N ≈ 64 sujetos por grupo (es decir, ~129 sujetos totales sumando F y M)**, según la fórmula con transformación arcoseno: n/grupo = ((z₁₋α/₂ + z₁₋β)/h)² = ((1.96+0.84)/0.35)² ≈ 64. Nota: en versiones anteriores de este informe se reportaba "129 sujetos por grupo", lo cual confundía total con tamaño por grupo. El tamaño actual (35F + 30M) tiene poder ~25-30% para esa diferencia.
+**Análisis de poder estadístico**: con un tamaño de efecto Cohen h ≈ 0.35 (moderado), detectar la diferencia observada al 80% de poder y α=0.05 requeriría aproximadamente **N ≈ 64 sujetos por grupo (≈128 sujetos totales sumando F y M)**, según la fórmula con transformación arcoseno: n/grupo = ((z₁₋α/₂ + z₁₋β)/h)² = ((1.96+0.84)/0.35)² ≈ 64. Nota: en versiones anteriores de este informe se reportaba "129 sujetos por grupo", lo cual confundía total con tamaño por grupo. El tamaño actual (35F + 30M) tiene poder ~25-30% para esa diferencia.
 
 **Lectura prudente**: **no se detectó diferencia significativa entre géneros, pero el poder estadístico es limitado** — la diferencia absoluta de 12.9 puntos en accuracy es relevante en magnitud, y no podemos descartar un sesgo real del modelo. Una validación con dataset balanceado por género o con N mayor sería necesaria antes de afirmar robustez al sesgo.
 
@@ -474,7 +474,7 @@ Más allá de la replicación, este TFM aporta:
 6. **Recomendaciones para trabajos futuros**:
    - **Igualar el eje "hacia arriba"**: recomputar la STFT con hop fino para alcanzar el Nyquist de la CWT, y ver si las modulaciones rápidas (>1.56 Hz) que CWT-fair descarta aportan poder discriminativo.
    - **CWT tuning específico**: cmor1-1, n_scales mayor, cone-of-influence.
-   - **Ensemble STFT+CWT** (late fusion) explotando la ortogonalidad de saliency.
+   - **Ensemble STFT+CWT** (late fusion) explotando la baja correlación (posible complementariedad) de los saliency maps.
    - **Test externo** en otro dataset EEG-AD.
    - **Banco de filtros con bandas no uniformes** (Condición C de la propuesta original).
    - **Nested CV** para grid search de patches; **dataset balanceado por género**; **≥10 seeds**.

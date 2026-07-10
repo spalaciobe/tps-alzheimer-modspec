@@ -98,21 +98,21 @@ misma resolución de modulación, distinta resolución de portadora).
 Clasificador & T-F & Acc & F1 macro & AUC \\
 \midrule
 SVM vainilla (paper-faithful) & \textbf{STFT} &
-  $\mathbf{0.764 \pm 0.009}$ & $\mathbf{0.762 \pm 0.011}$ & $\mathbf{0.856 \pm 0.022}$ \\
+  $\mathbf{0.764 \pm 0.009}$ & $\mathbf{0.760 \pm 0.008}$ & $\mathbf{0.856 \pm 0.022}$ \\
 SVM vainilla & CWT nativa &
-  $0.677 \pm 0.081$ & $0.673 \pm 0.094$ & $0.778 \pm 0.038$ \\
+  $0.677 \pm 0.081$ & $0.670 \pm 0.085$ & $0.778 \pm 0.038$ \\
 SVM vainilla & \textbf{CWT-fair} &
   $0.754 \pm 0.046$ & $0.750 \pm 0.046$ & $\mathbf{0.828 \pm 0.031}$ \\
 SVM Grad-CAM & STFT &
-  $0.662 \pm 0.031$ & $0.643 \pm 0.041$ & $0.713 \pm 0.020$ \\
+  $0.662 \pm 0.031$ & $0.643 \pm 0.033$ & $0.713 \pm 0.020$ \\
 SVM Grad-CAM & CWT nativa &
-  $0.703 \pm 0.009$ & $0.687 \pm 0.026$ & $0.800 \pm 0.010$ \\
+  $0.703 \pm 0.009$ & $0.697 \pm 0.012$ & $0.800 \pm 0.010$ \\
 SVM Grad-CAM & \textbf{CWT-fair} &
   $0.682 \pm 0.054$ & $0.673 \pm 0.050$ & $0.769 \pm 0.045$ \\
 CNN end-to-end & STFT &
-  $0.656 \pm 0.024$ & $0.642 \pm 0.020$ & $0.695 \pm 0.022$ \\
+  $0.656 \pm 0.024$ & $0.647 \pm 0.024$ & $0.695 \pm 0.022$ \\
 CNN end-to-end & CWT nativa &
-  $0.626 \pm 0.071$ & $0.611 \pm 0.070$ & $0.590 \pm 0.069$ \\
+  $0.626 \pm 0.071$ & $0.625 \pm 0.071$ & $0.590 \pm 0.069$ \\
 CNN end-to-end & \textbf{CWT-fair} &
   $0.656 \pm 0.062$ & $0.655 \pm 0.061$ & $0.667 \pm 0.067$ \\
 \bottomrule
@@ -146,9 +146,10 @@ CNN end-to-end & \textbf{CWT-fair} &
     estadísticamente indistinguibles.} DeLong por seed + Stouffer:
     STFT vs CWT-fair $p = 0.318$ (vainilla), $0.587$ (Grad-CAM); CWT
     nativa vs CWT-fair $p = 0.283$, $0.527$. Ninguna comparación es
-    significativa. \textbf{La elección STFT vs CWT-Morlet no cambia el
-    desempeño de este pipeline una vez controlado el eje}; ni la
-    hipótesis original (CWT > STFT) ni la inversa obtienen evidencia.
+    significativa. \textbf{No encontramos evidencia de que la elección
+    STFT vs CWT-Morlet cambie el desempeño una vez controlado el eje}
+    (potencia limitada, 3~seeds); ni la hipótesis original (CWT > STFT)
+    ni la inversa obtienen evidencia.
 
     \item \textbf{El método de saliency afecta el ranking aparente entre
     STFT y CWT nativa} (Grad-CAM: CWT mejor; vainilla: STFT mejor), pero
@@ -470,8 +471,8 @@ nativa y CWT-fair (CWT con el eje de modulación igualado a la STFT,
 \toprule
 T-F & Acc & F1 macro & AUC \\
 \midrule
-STFT & $0.656 \pm 0.024$ & $0.642 \pm 0.020$ & $0.695 \pm 0.022$ \\
-CWT nativa & $0.626 \pm 0.071$ & $0.611 \pm 0.070$ & $0.590 \pm 0.069$ \\
+STFT & $0.656 \pm 0.024$ & $0.647 \pm 0.024$ & $0.695 \pm 0.022$ \\
+CWT nativa & $0.626 \pm 0.071$ & $0.625 \pm 0.071$ & $0.590 \pm 0.069$ \\
 \textbf{CWT-fair} & $0.656 \pm 0.062$ & $0.655 \pm 0.061$ & $\mathbf{0.667 \pm 0.067}$ \\
 \bottomrule
 \end{tabular}
@@ -493,8 +494,8 @@ dropout~0.85.
 \toprule
 T-F & Acc & F1 & AUC \\
 \midrule
-STFT & $0.662 \pm 0.031$ & $0.643 \pm 0.041$ & $0.713 \pm 0.020$ \\
-CWT nativa & $\mathbf{0.703 \pm 0.009}$ & $\mathbf{0.687 \pm 0.026}$ & $\mathbf{0.800 \pm 0.010}$ \\
+STFT & $0.662 \pm 0.031$ & $0.643 \pm 0.033$ & $0.713 \pm 0.020$ \\
+CWT nativa & $\mathbf{0.703 \pm 0.009}$ & $\mathbf{0.697 \pm 0.012}$ & $\mathbf{0.800 \pm 0.010}$ \\
 CWT-fair & $0.682 \pm 0.054$ & $0.673 \pm 0.050$ & $0.769 \pm 0.045$ \\
 \bottomrule
 \end{tabular}
@@ -517,8 +518,8 @@ $p = 0.527$ --- ambas NS.
 \toprule
 T-F & Acc & F1 & AUC \\
 \midrule
-\textbf{STFT} & $\mathbf{0.764 \pm 0.009}$ & $\mathbf{0.762 \pm 0.011}$ & $\mathbf{0.856 \pm 0.022}$ \\
-CWT nativa & $0.677 \pm 0.081$ & $0.673 \pm 0.094$ & $0.778 \pm 0.038$ \\
+\textbf{STFT} & $\mathbf{0.764 \pm 0.009}$ & $\mathbf{0.760 \pm 0.008}$ & $\mathbf{0.856 \pm 0.022}$ \\
+CWT nativa & $0.677 \pm 0.081$ & $0.670 \pm 0.085$ & $0.778 \pm 0.038$ \\
 \textbf{CWT-fair} & $0.754 \pm 0.046$ & $0.750 \pm 0.046$ & $\mathbf{0.828 \pm 0.031}$ \\
 \bottomrule
 \end{tabular}
@@ -626,7 +627,7 @@ Métrica & Paper Lopes (T2: N vs AD, LOSO test) & Este TFM (SVM vainilla STFT, 3
 \midrule
 $N$ sujetos & 39 (20 N + 19 AD1) & 65 (29 HC + 36 AD) \\
 Accuracy & $0.71 \pm 0.02$ & $\mathbf{0.764 \pm 0.009}$ \\
-F1       & $0.61 \pm 0.02$ & $\mathbf{0.762 \pm 0.011}$ \\
+F1       & $0.61 \pm 0.02$ & $\mathbf{0.760 \pm 0.008}$ \\
 AUC      & no reportado    & $\mathbf{0.856 \pm 0.022}$ \\
 \bottomrule
 \end{tabular}
@@ -916,7 +917,7 @@ Fisher exact F vs M & --- & --- & OR $\approx 0.375$ & $\mathbf{p = 0.201}$ & Co
 \textbf{Análisis de poder estadístico}: con un tamaño de efecto Cohen
 $h \approx 0.35$ (moderado), detectar la diferencia observada al 80\%
 de poder y $\alpha = 0.05$ requeriría aproximadamente
-$N \approx 64$~sujetos por grupo (es decir, $\sim 129$~sujetos totales
+$N \approx 64$~sujetos por grupo ($\approx 128$~sujetos totales
 sumando F y M), según la fórmula con transformación arcoseno:
 $n_{\text{grupo}} = ((z_{1-\alpha/2} + z_{1-\beta})/h)^2 \approx 64$.
 El tamaño actual (35F + 30M) tiene poder $\sim 25$--$30\%$ para esa
@@ -1068,7 +1069,8 @@ Más allá de la replicación, este TFM aporta:
         descarta aportan poder discriminativo.
         \item CWT tuning específico (cmor1-1, $n_\text{scales}$ mayor,
         cone-of-influence).
-        \item Ensemble STFT~+~CWT (late fusion) explotando ortogonalidad.
+        \item Ensemble STFT~+~CWT (late fusion) explotando la baja
+        correlación (posible complementariedad) de los saliency maps.
         \item Test externo en otro dataset EEG-AD.
         \item Banco de filtros con bandas no uniformes.
         \item Nested CV para grid search; dataset balanceado por género;
