@@ -21,7 +21,7 @@ from scipy.signal import stft
 
 @dataclass
 class ModSpecConfig:
-    method: str                          # "stft" | "cwt"
+    method: str                          # "stft" | "cwt" | "cwt_fair"
     fs: int                              # 200 o 500 Hz
     target_shape: tuple[int, int] = (45, 45)
     carrier_range_hz: tuple[float, float] = (0.5, 45.0)
@@ -34,6 +34,11 @@ class ModSpecConfig:
     wavelet: str = "cmor1.5-1.0"
     n_scales: int = 50
     # Común
+    mod_env_rate_hz: float | None = None  # tasa objetivo (Hz) de la envolvente
+    #   antes de la FFT de modulación. Si se fija, la envolvente de potencia se
+    #   decima a esta tasa para que el eje de modulación sea COMPARABLE entre
+    #   transformadas con distinta resolución temporal nativa (p.ej. CWT a fs
+    #   vs STFT a fs/hop). None = sin decimación (comportamiento original).
     log_power: bool = True
     eps: float = 1e-10
 
@@ -79,6 +84,64 @@ def _modspec_from_tf(
     return M[:, keep], f_mod[keep]
 
 
+def _decimate_power_envelope(P: np.ndarray, q: int, axis: int) -> np.ndarray:
+    """Downsamplea una envolvente de potencia por factor entero q con
+    anti-aliasing (poly-phase FIR, fase cero vía upfirdn/Kaiser).
+
+    ADVERTENCIA: para q grande (p.ej. 64) el FIR anti-alias por defecto tiene
+    ~2*10*q+1 taps (~1281). Debe aplicarse sobre la señal COMPLETA (miles de
+    muestras), NO sobre un epoch aislado (1600 muestras a 8 s / 200 Hz), donde
+    el zero-pad del borde contaminaría gran parte de la ventana. Por eso el fix
+    decima el registro completo una sola vez en `compute_modulation_spectrum_subject`.
+
+    `padtype='line'` reduce el transitorio de borde frente al zero-pad. La
+    potencia no puede ser negativa, así que se recorta a >=0 el leve undershoot
+    del FIR (guarda de validez física).
+
+    MEMORIA: para un registro completo (T~156k muestras) el array (n_ch, F, T)
+    en float64 pesa ~0.8 GB y `resample_poly` asigna varias copias intermedias,
+    lo que puede agotar la RAM. Para acotar el pico, si P es ND se decima canal
+    por canal (eje 0) en float32 (la potencia no requiere float64). El resultado
+    es idéntico bit-a-bit por señal (resample_poly opera 1D-independiente por el
+    eje), solo cambia el pico de memoria.
+    """
+    if q < 2:
+        return P
+    from scipy.signal import resample_poly
+    if P.ndim >= 3:
+        chans = []
+        for c in range(P.shape[0]):
+            dc = resample_poly(np.asarray(P[c], dtype=np.float32), up=1, down=q,
+                               axis=axis - 1, padtype="line")
+            chans.append(np.clip(dc, 0.0, None))
+        return np.stack(chans, axis=0)
+    out = resample_poly(np.asarray(P, dtype=np.float32), up=1, down=q, axis=axis, padtype="line")
+    return np.clip(out, 0.0, None)
+
+
+def _match_env_rate(
+    P: np.ndarray, t: np.ndarray, target_rate_hz: float | None, time_axis: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Iguala la tasa de muestreo de la envolvente P a `target_rate_hz`.
+
+    Decima P a lo largo de `time_axis` por el factor entero q más cercano y
+    reconstruye el vector temporal t con el nuevo paso. Hace COMPARABLE el eje
+    de modulación entre transformadas cuya T-F nativa difiere en resolución
+    temporal (CWT preserva fs; STFT muestrea a fs/hop). Devuelve (P', t').
+    """
+    if target_rate_hz is None or len(t) < 2:
+        return P, t
+    native_rate = 1.0 / float(np.median(np.diff(t)))
+    q = int(round(native_rate / target_rate_hz))
+    if q < 2:
+        return P, t
+    P_dec = _decimate_power_envelope(P, q, axis=time_axis)
+    n_new = P_dec.shape[time_axis]
+    dt_new = q / native_rate  # = 1 / target_rate_hz (por construcción)
+    t_new = float(t[0]) + np.arange(n_new) * dt_new
+    return P_dec, t_new
+
+
 def _crop_carrier(
     M: np.ndarray, f_carrier: np.ndarray, low: float, high: float
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -108,7 +171,7 @@ def compute_modulation_spectrum_single(
     """
     if cfg.method == "stft":
         f, t, P = _stft_tf(x, cfg.fs, cfg.window, cfg.nperseg, cfg.noverlap)
-    elif cfg.method == "cwt":
+    elif cfg.method in ("cwt", "cwt_fair"):
         f, t, P = _cwt_tf(
             x, cfg.fs, cfg.wavelet, cfg.n_scales,
             cfg.carrier_range_hz[0], cfg.carrier_range_hz[1],
@@ -116,6 +179,15 @@ def compute_modulation_spectrum_single(
     else:
         raise ValueError(f"method desconocido: {cfg.method}")
 
+    if cfg.mod_env_rate_hz is not None:
+        # La decimación de la envolvente (mod_env_rate_hz, p.ej. cwt_fair) requiere
+        # el FIR anti-alias sobre la señal COMPLETA, no sobre un epoch aislado
+        # (ver _decimate_power_envelope). Este camino monocanal opera epoch a
+        # epoch, así que se prohíbe: usar compute_modulation_spectrum_subject.
+        raise ValueError(
+            "mod_env_rate_hz no está soportado en compute_modulation_spectrum_single "
+            "(decimación por-epoch no fiable). Usa compute_modulation_spectrum_subject."
+        )
     P, f = _crop_carrier(P, f, *cfg.carrier_range_hz)
     M, _f_mod = _modspec_from_tf(P, t, cfg.mod_range_hz[1])
     M = _resize_2d(M, cfg.target_shape)
@@ -148,7 +220,7 @@ def _full_signal_tf(x: np.ndarray, cfg: ModSpecConfig) -> tuple[np.ndarray, np.n
     """Calcula la T-F de toda la señal de un canal. Devuelve (f, t, P)."""
     if cfg.method == "stft":
         return _stft_tf(x, cfg.fs, cfg.window, cfg.nperseg, cfg.noverlap)
-    if cfg.method == "cwt":
+    if cfg.method in ("cwt", "cwt_fair"):
         return _cwt_tf(
             x, cfg.fs, cfg.wavelet, cfg.n_scales,
             cfg.carrier_range_hz[0], cfg.carrier_range_hz[1],
@@ -203,14 +275,24 @@ def compute_modulation_spectrum_subject(
                                       *cfg.carrier_range_hz)
     P_full = P_full.transpose(1, 0, 2)                           # (n_ch, F, T_tf)
 
+    # Igualar la tasa de la envolvente ANTES de rebanar epochs, para que el eje
+    # de modulación sea comparable con otras transformadas (fair comparison).
+    # Se decima una sola vez sobre la señal completa (filtrado continuo, sin
+    # transitorios por epoch).
+    if cfg.mod_env_rate_hz is not None:
+        P_full, t_axis = _match_env_rate(P_full, t_axis, cfg.mod_env_rate_hz, time_axis=2)
+
     # Mapear epochs en muestras → índices en el eje T-F (t_axis)
     epoch_dur_samp = int(round(epoch_duration_s * fs))
     epoch_step_samp = int(round(epoch_step_s * fs))
     epoch_starts = np.arange(0, end_samp - epoch_dur_samp + 1, epoch_step_samp)
     epoch_ends = epoch_starts + epoch_dur_samp
 
-    # Convertir bordes en muestras a bordes en el eje T-F
-    t_samples = (t_axis * fs).astype(np.int64)
+    # Convertir bordes en muestras a bordes en el eje T-F.
+    # np.round (no truncar): con dt≈q/native el producto t_axis*fs cae un epsilon
+    # por debajo de los múltiplos enteros y astype(int) truncaría -1 muestra en
+    # casi cada frontera de epoch.
+    t_samples = np.round(t_axis * fs).astype(np.int64)
     n_epochs = len(epoch_starts)
 
     # Pre-crear out

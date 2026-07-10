@@ -13,18 +13,40 @@ class ChannelStats:
     std: np.ndarray    # (n_channels,)
 
 
-def fit_channel_zscore(X: np.ndarray, eps: float = 1e-8) -> ChannelStats:
+def fit_channel_zscore(X: np.ndarray, eps: float = 1e-8, chunk: int = 512) -> ChannelStats:
     """Calcula media y desviación por canal sobre todos los epochs de train.
 
-    Acumula en float64 para evitar overflow con float16 (max ~65504), aunque
-    el input venga en cualquier dtype.
+    Acumulación en float64 por CHUNKS de epochs (dos pasadas: media y varianza)
+    para (a) evitar overflow con float16 y (b) NO materializar un temporal
+    float64 del tamaño completo. `X.std(dtype=np.float64)` sobre un train grande
+    (p.ej. (50568, 19, 45, 45)) asignaba ~14.5 GiB de una sola vez → OOM en el
+    camino --no-bank. Este cálculo por chunks tiene pico ~chunk·C·F·M·8 bytes
+    (~150 MB con chunk=512) y es numéricamente idéntico a numpy.std (ddof=0,
+    dos pasadas centrando en la media).
 
     Args:
         X: (n_epochs, n_channels, F, M).
     """
-    axes = (0, 2, 3)
-    mean = X.mean(axis=axes, dtype=np.float64)
-    std = X.std(axis=axes, dtype=np.float64)
+    n, n_ch = X.shape[0], X.shape[1]
+    per = X.shape[2] * X.shape[3]
+    count = float(n * per)
+
+    # Pasada 1: media por canal.
+    s1 = np.zeros(n_ch, dtype=np.float64)
+    for i in range(0, n, chunk):
+        xb = np.asarray(X[i:i + chunk], dtype=np.float64)
+        s1 += xb.sum(axis=(0, 2, 3))
+    mean = s1 / count
+
+    # Pasada 2: varianza por canal (suma de cuadrados centrados).
+    m = mean[None, :, None, None]
+    s2 = np.zeros(n_ch, dtype=np.float64)
+    for i in range(0, n, chunk):
+        xb = np.asarray(X[i:i + chunk], dtype=np.float64)
+        xb -= m
+        xb *= xb
+        s2 += xb.sum(axis=(0, 2, 3))
+    std = np.sqrt(np.maximum(s2 / count, 0.0))
     std = np.where(std < eps, 1.0, std)
     return ChannelStats(mean=mean.astype(np.float32), std=std.astype(np.float32))
 

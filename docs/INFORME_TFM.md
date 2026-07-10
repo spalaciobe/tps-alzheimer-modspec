@@ -3,7 +3,7 @@
 **Autor**: Sebastián Palacio Betancur
 **Programa**: Maestría · Universidad Nacional de Colombia — Sede Medellín · Facultad de Minas
 **Curso**: Tópicos en Procesamiento Digital de Señales · Profesor: Freddy Bolaños
-**Fecha**: junio 2026
+**Fecha**: julio 2026
 **Repositorio**: https://github.com/spalaciobe/tps-alzheimer-modspec
 
 ---
@@ -12,25 +12,35 @@
 
 Este trabajo replica de forma independiente el pipeline de Lopes et al. (2023) [*Using CNN Saliency Maps and EEG Modulation Spectra for Improved and More Interpretable Machine Learning-Based Alzheimer's Disease Diagnosis*, Computational Intelligence and Neuroscience 2023, art. 3198066; DOI: 10.1155/2023/3198066] sobre el dataset público **OpenNeuro ds004504** (Miltiadous 2023), y extiende el análisis comparando **STFT vs CWT-Morlet** como etapa de descomposición tiempo-frecuencia.
 
+Para separar el efecto de la **transformada** del de un **artefacto de DSP** en el eje de modulación (ver §3.3), se evalúan **tres** representaciones tiempo-frecuencia: STFT, CWT-Morlet nativa, y **CWT-fair** (CWT con la envolvente decimada para igualar el eje de modulación de la STFT — misma resolución de modulación, distinta resolución de portadora).
+
 **Resultados principales (LOSO-CV 65 sujetos, 3 seeds):**
 
-| Configuración | Acc | F1 | AUC |
-|---|---|---|---|
-| SVM con saliency **vainilla + STFT** (paper-faithful) | **0.764 ± 0.009** | **0.762 ± 0.011** | **0.856 ± 0.022** |
-| SVM con saliency vanilla + CWT | 0.677 ± 0.081 | 0.673 ± 0.094 | 0.778 ± 0.038 |
-| SVM con saliency Grad-CAM + STFT | 0.662 ± 0.031 | 0.643 ± 0.041 | 0.713 ± 0.020 |
-| SVM con saliency Grad-CAM + CWT | 0.703 ± 0.009 | 0.687 ± 0.026 | 0.800 ± 0.010 |
-| CNN end-to-end + STFT | 0.656 ± 0.024 | 0.642 ± 0.020 | 0.695 ± 0.022 |
-| CNN end-to-end + CWT | 0.626 ± 0.071 | 0.611 ± 0.070 | 0.590 ± 0.069 |
+| Clasificador | T-F | Acc | F1 | AUC |
+|---|---|---|---|---|
+| SVM vainilla (paper-faithful) | **STFT** | **0.764 ± 0.009** | **0.760 ± 0.008** | **0.856 ± 0.022** |
+| SVM vainilla | CWT nativa | 0.677 ± 0.081 | 0.670 ± 0.085 | 0.778 ± 0.038 |
+| SVM vainilla | **CWT-fair** | 0.754 ± 0.046 | 0.750 ± 0.046 | **0.828 ± 0.031** |
+| SVM Grad-CAM | STFT | 0.662 ± 0.031 | 0.643 ± 0.033 | 0.713 ± 0.020 |
+| SVM Grad-CAM | CWT nativa | 0.703 ± 0.009 | 0.697 ± 0.012 | 0.800 ± 0.010 |
+| SVM Grad-CAM | **CWT-fair** | 0.682 ± 0.054 | 0.673 ± 0.050 | 0.769 ± 0.045 |
+| CNN end-to-end | STFT | 0.656 ± 0.024 | 0.647 ± 0.024 | 0.695 ± 0.022 |
+| CNN end-to-end | CWT nativa | 0.626 ± 0.071 | 0.625 ± 0.071 | 0.590 ± 0.069 |
+| CNN end-to-end | **CWT-fair** | 0.656 ± 0.062 | 0.655 ± 0.061 | 0.667 ± 0.067 |
 
 **Conclusiones clave (con matices estadísticos explícitos):**
 
-1. **La replicación independiente del pipeline funciona**: SVM con saliency vainilla y STFT alcanza Acc 0.764 ± 0.009, AUC 0.856 ± 0.022, en el rango del 0.71 ± 0.02 reportado por Lopes (T2: N vs AD). La comparación es orientativa (datasets y poblaciones distintas), no equivalencia estricta.
-2. **La hipótesis original (CWT > STFT) no obtiene evidencia a favor, pero la inversa tampoco**: con saliency vainilla (la configuración más fiel al paper), CWT presenta AUC media menor (0.778 ± 0.038 vs 0.856 ± 0.022) y mayor varianza entre seeds. La inferencia formal (DeLong AUC por seed + combinación Stouffer/Fisher) da **p ≈ 0.061 (NS)**, y tras corrección BH-FDR sobre las 3 comparaciones principales **ninguna sobrevive** (q ≥ 0.10). Lectura conservadora: **no hay evidencia estadísticamente concluyente** en ninguna dirección.
-3. **Confound DSP crítico (detectado en revisión externa)**: los ejes de modulación de STFT (Nyquist 1.56 Hz, 13 bins reales interpolados a 45) y CWT (Nyquist 100 Hz, 180 bins subsampleados a 45) NO codifican el mismo contenido espectral. La comparación STFT vs CWT en este TFM está confundida con esta asimetría de DSP, no controlada por diseño (ver §3.3, §5.1, §5.5).
-4. **El método de saliency afecta cualitativamente el ranking**: con Grad-CAM la tendencia se invierte (CWT > STFT en AUC, no significativo, p=0.195). Esto sugiere que las comparaciones STFT vs CWT son sensibles al método de saliency usado; la conclusión "X supera a Y" depende del pipeline completo, no solo de la transformada T-F.
-5. **Análisis exploratorio (post-hoc)**: STFT + vainilla concentra ~89% de saliency en bandas alpha (61%) + theta (28%), coherente con literatura EEG-AD (Fraga 2013). Los canales más informativos son occipito-temporales (O1, O2, T5, T6). Estos hallazgos son post-hoc y deben validarse en otros datasets. **La atribución por banda no se reporta para CWT** porque su eje portador es geomspace y la asignación píxel→banda requeriría rehacer el mapeo (ver §5.5).
-6. **Limitaciones reconocidas**: solo 3 seeds (poder estadístico modesto), grid search de patches heurístico (no nested CV), resize 45×45 puede favorecer STFT, ejes de modulación incomparables entre métodos, sesgo de género en el dataset (χ² p=0.039) con poder limitado para descartarlo en el modelo (**ausencia de evidencia, no evidencia de ausencia**), baja consistencia de patches entre folds (Jaccard ≈ 0.05), saliency maps de STFT y CWT **estadísticamente ortogonales** (r ≈ −0.09 vainilla, −0.24 Grad-CAM) lo que sugiere también **complementariedad** (ensemble como hipótesis futura).
+1. **La replicación independiente del pipeline funciona**: SVM con saliency vainilla y STFT alcanza **Acc 0.764 ± 0.009** (comparable con el Acc 0.71 ± 0.02 de Lopes en T2: N vs AD; el paper no reporta AUC), con **AUC 0.856 ± 0.022**. La comparación es orientativa (datasets y poblaciones distintas), no equivalencia estricta.
+
+2. **Las diferencias aparentes STFT vs CWT eran en gran parte un artefacto de DSP, no de la transformada.** El eje de modulación de la STFT (Nyquist 1.56 Hz) y el de la CWT nativa (Nyquist 100 Hz) NO codifican el mismo contenido antes del resize a 45×45. Al igualarlos (CWT-fair), la brecha con STFT **se reduce sustancialmente en ambos métodos de saliency, aunque en distinta magnitud**: con vainilla la CWT pasa de −0.078 AUC a **−0.028** (una reducción del ~64%; cwt_fair 0.828 vs stft 0.856); con Grad-CAM pasa de +0.087 a **+0.056** (~36%, donde el eje explica solo parte de la brecha). En ambos casos corregir el eje **mueve la CWT hacia la STFT**.
+
+3. **Con el eje de modulación igualado, STFT y CWT son estadísticamente indistinguibles.** DeLong AUC por seed + combinación (Stouffer): STFT vs CWT-fair p = 0.318 (vainilla), 0.587 (Grad-CAM); CWT nativa vs CWT-fair p = 0.283, 0.527. Ninguna comparación es significativa. **Conclusión: no encontramos evidencia de que la elección STFT vs CWT-Morlet cambie el desempeño de este pipeline una vez controlado el eje de modulación** (potencia limitada, 3 seeds); la hipótesis original (CWT > STFT) no obtiene evidencia, y tampoco la inversa.
+
+4. **El método de saliency afecta el ranking aparente entre STFT y CWT nativa** (con Grad-CAM CWT parece mejor, con vainilla STFT parece mejor), pero esa sensibilidad **se atenúa con CWT-fair**: buena parte del "cambio de ranking" también era el artefacto DSP interactuando con cada método de saliency.
+
+5. **Análisis exploratorio (post-hoc)**: STFT + vainilla concentra ~89% de saliency en bandas alpha (61%) + theta (28%), coherente con literatura EEG-AD (Fraga 2013). Los canales más informativos son occipito-temporales (O1, O2, T5, T6). Post-hoc; validar en otros datasets. **La atribución por banda se reporta solo para STFT** (eje portador lineal); la CWT usa geomspace (ver §5.5).
+
+6. **Limitaciones reconocidas**: solo 3 seeds (poder estadístico modesto); grid search de patches heurístico (no nested CV); CWT-fair "iguala hacia abajo" el eje de modulación (descarta modulaciones rápidas — decisión defendible pero no única, ver §5.1); sesgo de género en el dataset (χ² p=0.039) con poder limitado (**ausencia de evidencia, no evidencia de ausencia**); baja consistencia de patches entre folds (Jaccard ≈ 0.05); saliency maps de STFT y CWT **débilmente correlacionados, cerca de cero** (r ≈ −0.09 vainilla, −0.24 Grad-CAM).
 
 ---
 
@@ -115,21 +125,24 @@ El pipeline replica el de Lopes et al. con las siguientes etapas:
 - **STFT**: ventana Hann, nperseg=128, noverlap=64 a fs=200 Hz.
   - Resolución frecuencial portadora real: Δf = fs/nperseg = **1.5625 Hz** (no 1 Hz nominal).
   - **Frecuencia de muestreo de la envolvente** (eje temporal de la FFT de modulación): dt = noverlap/fs = 64/200 = 0.32 s ⇒ fs_t ≈ 3.125 Hz ⇒ **Nyquist de modulación = 1.5625 Hz** (en un epoch de 8 s genera ~24 frames temporales, ~13 bins de modulación útiles antes del crop a 22.5 Hz).
-- **CWT-Morlet** (`cmor1.5-1.0`, 32 escalas log en [0.5, 45] Hz):
+- **CWT-Morlet nativa** (`cmor1.5-1.0`, 32 escalas log en [0.5, 45] Hz):
   - **Frecuencia de muestreo de la envolvente**: 200 Hz (CWT preserva la fs original) ⇒ **Nyquist de modulación = 100 Hz**, ~180 bins disponibles en 0-22.5 Hz.
+- **CWT-fair** (misma CWT-Morlet, misma portadora): la envolvente de potencia se **decima a 3.125 Hz** (anti-alias poly-phase FIR) **antes** de la FFT temporal, igualando el Nyquist de modulación de la STFT (1.5625 Hz, ~13 bins reales). Solo cambia el eje de modulación; la descomposición de portadora (wavelet, 32 escalas) es idéntica a la CWT nativa.
 - **Procesamiento común**: magnitud al cuadrado → FFT temporal → recorte (0.5-45 Hz portadora, 0-22.5 Hz mod) → **resize bilinear a 45×45** (alineación con la arquitectura CNN de Lopes) → log-power.
 
-> **⚠️ CONFOUND DSP IMPORTANTE — Detectado en revisión externa (no en la implementación inicial)**:
+> **⚠️ Asimetría de DSP en el eje de modulación — y cómo se controla**:
 >
-> Las dos imágenes "45×45" finales **NO representan el mismo rango físico** del eje de modulación:
+> Las imágenes "45×45" de STFT y CWT nativa **NO representan el mismo rango físico** del eje de modulación:
 > - STFT: 0 a **1.5625 Hz** (interpolado de 13 bins reales a 45 vía bilineal).
-> - CWT: 0 a **22.5 Hz** (subsampled de ~180 bins a 45).
+> - CWT nativa: 0 a **22.5 Hz** (subsampleado de ~180 bins a 45).
 >
-> Como consecuencia, la comparación cuantitativa STFT vs CWT bajo este pipeline NO es una comparación justa entre transformadas T-F: es una comparación entre **dos representaciones que capturan rangos de modulación drásticamente distintos**. La STFT aquí captura solo modulaciones lentas (alpha/theta envelope dynamics ≤ 1.56 Hz), mientras que CWT incluye modulaciones rápidas (hasta 22.5 Hz).
+> Por tanto, una comparación STFT vs CWT nativa mezcla dos efectos: la **transformada** (resolución de portadora) y la **resolución del eje de modulación**. Para separarlos se introduce **CWT-fair**, que mantiene la transformada CWT pero iguala el eje de modulación al de la STFT (decimando la envolvente a 3.125 Hz). Comparar:
+> - **STFT vs CWT-fair** aísla el efecto de la transformada a **igualdad de eje de modulación** (comparación justa).
+> - **CWT nativa vs CWT-fair** cuantifica cuánto del resultado dependía del eje de modulación (el artefacto de DSP).
 >
-> Esto es un **confound más serio que el resize 45×45 per se** y debe interpretarse así: **las conclusiones cuantitativas STFT vs CWT en este informe reflejan un pipeline específico con eje de modulación efectivamente distinto, no una comparación equitativa de las transformadas T-F en sí**. Ver §5.5 (limitación 4) y §6 (conclusiones revisadas).
+> Resultado (ver §4.3): ambas comparaciones son **no significativas** — la asimetría de DSP explica la mayor parte de las diferencias aparentes STFT↔CWT.
 >
-> Mitigación correcta para trabajo futuro: decimar la envolvente CWT a la misma tasa de muestreo (3.125 Hz) antes de la FFT temporal, o computar la STFT con hop mucho más fino para igualar el Nyquist.
+> **Nota**: CWT-fair "iguala hacia abajo" (descarta las modulaciones rápidas de la CWT). Es fisiológicamente defendible (la modulación de amplitud diagnóstica en EA es lenta, <2 Hz; Fraga 2013), pero es una de dos definiciones de "justo"; la alternativa (subir la STFT con hop más fino) se deja como trabajo futuro (§5.5).
 
 ### 3.4 CNN — réplica fiel de la arquitectura del paper
 
@@ -188,66 +201,63 @@ Para cada fold del LOSO:
 
 ## 4. Resultados
 
+Cada tabla compara las **tres** representaciones T-F: STFT, CWT nativa y CWT-fair (CWT con el eje de modulación igualado a la STFT, §3.3).
+
 ### 4.1 CNN end-to-end (3 seeds)
 
-| Método | Acc | F1 macro | Sensibilidad | Especificidad | AUC |
-|---|---|---|---|---|---|
-| STFT | 0.656 ± 0.024 | 0.642 ± 0.020 | 0.741 ± 0.029 | 0.552 ± 0.034 | 0.695 ± 0.022 |
-| CWT | 0.626 ± 0.071 | 0.611 ± 0.070 | 0.602 ± 0.060 | 0.655 ± 0.087 | 0.590 ± 0.069 |
+| T-F | Acc | F1 macro | AUC |
+|---|---|---|---|
+| STFT | 0.656 ± 0.024 | 0.647 ± 0.024 | 0.695 ± 0.022 |
+| CWT nativa | 0.626 ± 0.071 | 0.625 ± 0.071 | 0.590 ± 0.069 |
+| **CWT-fair** | 0.656 ± 0.062 | 0.655 ± 0.061 | **0.667 ± 0.067** |
 
-**DeLong por seed** (combinado Stouffer): AUC STFT − CWT ≈ +0.10, p = 0.266 (NS).
-
-La CNN sola opera apenas mejor que el "baseline trivial" (0.554 si siempre predice AD). Esto es coherente con su rol en el pipeline: la CNN no es el clasificador final, sino el extractor de regiones discriminativas vía saliency. Su accuracy modesta es esperada con dropout 0.85.
+Igualar el eje de modulación **recupera la mayor parte del déficit de la CWT** también en la CNN: AUC pasa de 0.590 (nativa) a 0.667 (fair), acercándose a STFT (0.695). La CNN sola opera cerca del baseline trivial (0.554 si siempre predice AD), coherente con su rol de extractor de regiones (no clasificador final) y su dropout 0.85.
 
 ### 4.2 SVM con patches Grad-CAM (3 seeds)
 
-| Método | Acc | F1 | AUC |
+| T-F | Acc | F1 | AUC |
 |---|---|---|---|
-| STFT | 0.662 ± 0.031 | 0.643 ± 0.041 | 0.713 ± 0.020 |
-| CWT | **0.703 ± 0.009** | **0.687 ± 0.026** | **0.800 ± 0.010** |
+| STFT | 0.662 ± 0.031 | 0.643 ± 0.033 | 0.713 ± 0.020 |
+| CWT nativa | **0.703 ± 0.009** | **0.697 ± 0.012** | **0.800 ± 0.010** |
+| CWT-fair | 0.682 ± 0.054 | 0.673 ± 0.050 | 0.769 ± 0.045 |
 
-**DeLong por seed** (combinado Stouffer): AUC CWT − STFT ≈ +0.09, p = 0.068 (NS).
-
-Con Grad-CAM, CWT tiende a ser mejor que STFT, pero la diferencia no alcanza significancia estadística con 3 seeds.
+Con Grad-CAM, la CWT **nativa** parecía la mejor (0.800). Pero al igualar el eje de modulación, CWT-fair baja a 0.769 — **acercándose a STFT**. La ventaja aparente de la CWT nativa era en parte el eje de modulación más rico, no la transformada. DeLong por seed (Stouffer): STFT vs CWT-fair p = **0.587**; CWT nativa vs CWT-fair p = **0.527** — ambas NS.
 
 ### 4.3 SVM con patches vainilla (paper-faithful) — **Resultado principal** (3 seeds)
 
-| Método | Acc | F1 | AUC |
+| T-F | Acc | F1 | AUC |
 |---|---|---|---|
-| **STFT** | **0.764 ± 0.009** | **0.762 ± 0.011** | **0.856 ± 0.022** |
-| CWT | 0.677 ± 0.081 | 0.673 ± 0.094 | 0.778 ± 0.038 |
+| **STFT** | **0.764 ± 0.009** | **0.760 ± 0.008** | **0.856 ± 0.022** |
+| CWT nativa | 0.677 ± 0.081 | 0.670 ± 0.085 | 0.778 ± 0.038 |
+| **CWT-fair** | 0.754 ± 0.046 | 0.750 ± 0.046 | **0.828 ± 0.031** |
 
-#### 4.3.1 Inferencia estadística: DeLong por seed + combinación
+#### 4.3.1 Comparación justa: DeLong por seed + combinación
 
-La comparación de AUC entre STFT y CWT se hace con el test de DeLong pareado **dentro de cada seed por separado** (n=65 sujetos en cada test LOSO), y luego se combinan los tres p-values entre seeds con los métodos de Stouffer y Fisher. Este es el procedimiento correcto: preserva la variabilidad real entre inicializaciones en lugar de colapsarla en un ensemble.
+DeLong AUC pareado **dentro de cada seed** (n=65 por test LOSO), combinado entre seeds con Stouffer/Fisher (preserva la variabilidad real entre inicializaciones). Se reportan tres comparaciones:
 
-| seed | AUC STFT | AUC CWT | Δ AUC | DeLong p |
-|---|---|---|---|---|
-| s0 | 0.843 | 0.815 | +0.028 | 0.660 |
-| s1 | 0.844 | 0.739 | +0.105 | 0.051 |
-| s2 | 0.881 | 0.781 | +0.101 | 0.072 |
+| Comparación | Δ AUC por seed | Stouffer p | Lectura |
+|---|---|---|---|
+| STFT vs CWT **nativa** (confundida) | +0.028, +0.105, +0.101 | **0.061** | marginal — pero mezcla transformada + eje |
+| **STFT vs CWT-fair** (justa) | −0.021, +0.036, +0.069 | **0.318** | NS — sin diferencia a igualdad de eje |
+| CWT nativa vs CWT-fair (efecto del eje) | −0.049, −0.069, −0.032 | **0.283** | NS — el eje explica el grueso de la brecha |
 
-**Combinación de p-values entre seeds (SVM vainilla, STFT vs CWT):**
-- Stouffer: z = 1.55, p combinado = **0.061**
-- Fisher: χ² = 12.03, p combinado = **0.061**
-
-Ningún seed individual alcanza significancia al α=0.05, y la combinación tampoco (p ≈ 0.061). El AUC medio mayor de STFT (0.856 vs 0.778) y su menor varianza (±0.022 vs ±0.038) son consistentes con una posible ventaja, pero **la inferencia formal no alcanza significancia**.
+**Interpretación**: la ventaja marginal de STFT sobre la CWT nativa (p = 0.061) **se disuelve a p = 0.318 cuando se iguala el eje de modulación** (STFT vs CWT-fair). Es decir, ese p ≈ 0.06 estaba impulsado por el artefacto de DSP, no por la transformada. La CWT-fair recupera la brecha (0.778 → 0.828 AUC, −0.078 → −0.028 vs STFT). **A igualdad de eje de modulación, STFT y CWT-Morlet son estadísticamente indistinguibles.**
 
 #### 4.3.2 Corrección por múltiples comparaciones (BH-FDR)
 
-Las tres comparaciones principales (CNN, SVM Grad-CAM, SVM vainilla) se corrigen por multiplicidad con Benjamini-Hochberg (α=0.05) sobre los p-values combinados (Stouffer):
+Corrección Benjamini-Hochberg (α=0.05) sobre los p-values combinados (Stouffer) de las comparaciones **justas** STFT vs CWT-fair (las que aíslan la transformada). Familia de **m=3** comparaciones (CNN, SVM Grad-CAM, SVM vainilla):
 
-| Comparación | p (Stouffer) | BH-FDR q | Sig. tras corrección |
+| Comparación justa (STFT vs CWT-fair) | p (Stouffer) | BH-FDR q | Sig. |
 |---|---|---|---|
-| SVM vainilla STFT vs CWT | 0.061 | 0.102 | ✗ |
-| SVM Grad-CAM STFT vs CWT | 0.068 | 0.102 | ✗ |
-| CNN STFT vs CWT | 0.266 | 0.266 | ✗ |
+| SVM vainilla | 0.318 | 0.679 | ✗ |
+| SVM Grad-CAM | 0.587 | 0.679 | ✗ |
+| CNN | 0.679 | 0.679 | ✗ |
 
-**Ninguna comparación sobrevive BH-FDR** (q ≥ 0.10). La lectura definitiva es **ausencia de evidencia concluyente para superioridad de cualquier método T-F en este pipeline**.
+**Ninguna comparación justa se acerca a la significancia** (q ≈ 0.68 en las tres). La lectura definitiva: **a igualdad de eje de modulación, no hay evidencia de superioridad de ninguna transformada T-F en este pipeline**. (Para contexto: la comparación *confundida* STFT vs CWT nativa daba p=0.061 vainilla y 0.068 Grad-CAM — marginales y tampoco significativas tras corrección; las justas quedan mucho más lejos.)
 
 #### 4.3.3 Wilcoxon por seed individual (consistencia)
 
-Wilcoxon pareado de scores por sujeto en cada seed individual (SVM vainilla, STFT vs CWT) corrobora la falta de un efecto consistente:
+Wilcoxon pareado de scores por sujeto en cada seed (SVM vainilla, STFT vs CWT nativa) corrobora la falta de un efecto consistente incluso en la comparación confundida:
 
 | seed | Wilcoxon p |
 |---|---|
@@ -257,7 +267,7 @@ Wilcoxon pareado de scores por sujeto en cada seed individual (SVM vainilla, STF
 
 Solo en seed=1 hay diferencia significativa, perdida con Bonferroni intra-seed (α=0.0167). La señal no se replica entre semillas.
 
-**Lectura final**: **no se encuentra evidencia estadísticamente concluyente** de diferencia entre STFT y CWT en este pipeline. La hipótesis original (CWT > STFT) no obtiene evidencia a favor, pero **tampoco se prueba lo contrario con rigor estadístico**.
+**Lectura final**: una vez controlado el eje de modulación (CWT-fair), **STFT y CWT-Morlet son estadísticamente indistinguibles** (DeLong STFT vs CWT-fair p=0.318 vainilla, 0.587 Grad-CAM; ninguna sobrevive BH-FDR). La hipótesis original (CWT > STFT) no obtiene evidencia, ni tampoco la inversa: **no encontramos evidencia de que la elección de transformada T-F cambie el desempeño de este pipeline** (potencia limitada, 3 seeds). Las diferencias aparentes con la CWT nativa (p≈0.06) eran en gran parte el artefacto de DSP del eje de modulación.
 
 ### 4.4 Comparación con el paper Lopes 2023
 
@@ -265,7 +275,7 @@ Solo en seed=1 hay diferencia significativa, perdida con Bonferroni intra-seed (
 |---|---|---|
 | N sujetos | 39 (20 N + 19 AD1) | 65 (29 HC + 36 AD) |
 | Accuracy | 0.71 ± 0.02 | **0.764 ± 0.009** |
-| F1 | 0.61 ± 0.02 | **0.762 ± 0.011** |
+| F1 | 0.61 ± 0.02 | **0.760 ± 0.008** |
 | AUC | no reportado | **0.856 ± 0.022** |
 
 **El TFM obtiene cifras en el rango del paper o ligeramente superiores**, pero la comparación NO es estricta: los datasets son distintos (privado vs ds004504), las poblaciones difieren en demografía/MMSE, y los anti-leakage no son idénticos (este TFM usa saliency y patches por fold, lo que el paper original no documenta explícitamente). Lo que se puede afirmar es que el pipeline **funciona en el mismo orden de magnitud** sobre datos públicos independientes, lo cual es el objetivo principal de una replicación.
@@ -281,24 +291,22 @@ Pearson r entre saliency maps `saliency_diff` (3 seeds, media ± SD):
 | **Grad-CAM vs vainilla** con STFT | +0.114 ± 0.043 |
 | **Grad-CAM vs vainilla** con CWT | -0.166 ± 0.106 |
 
-**Interpretación**: los saliency maps STFT y CWT NO son consistentes — son **estadísticamente ortogonales** (Pearson r ≈ −0.09 vainilla, −0.24 Grad-CAM; ningún p<0.05 para r distinto de 0). Hablar de "anti-correlación" sería sobreinterpretar el signo: las correlaciones son estadísticamente indistinguibles de cero. Lo mismo ocurre entre Grad-CAM y vainilla. Esto demuestra que **"el biomarcador descubierto" depende fuertemente de la elección de pipeline**.
+**Interpretación**: los saliency maps STFT y CWT NO son consistentes — están **débilmente correlacionados, cerca de cero** (Pearson r ≈ −0.09 vainilla, −0.24 Grad-CAM, promedio de 3 seeds). Con solo 3 seeds no se puede afirmar *independencia* estadística; lo defendible es que no hay una correlación fuerte, y hablar de "anti-correlación" sobreinterpretaría el signo. Lo mismo ocurre entre Grad-CAM y vainilla. Esto sugiere que **"el biomarcador descubierto" depende de la elección de pipeline**.
 
 ### 4.6 Análisis por banda canónica (post-hoc, exploratorio)
 
 > **Nota metodológica**: este análisis y el siguiente (4.7) son **exploratorios post-hoc** sobre las saliency maps agregadas. No estaban pre-registrados como hipótesis, y la elección del umbral top-10% es arbitraria. Los resultados deben interpretarse como observaciones descriptivas para guiar futuras hipótesis, no como prueba de un biomarcador validado.
 
-Proporción de píxeles top-10% saliency en cada banda canónica (media entre seeds):
+Proporción de píxeles top-10% saliency en cada banda canónica (media entre seeds). **Solo STFT**: la CWT usa un eje portador log-espaciado (geomspace), por lo que la asignación píxel→banda requeriría un mapeo distinto y no se reporta (ver §5.5).
 
 | Configuración | δ (0.5–4 Hz) | θ (4–8 Hz) | α (8–13 Hz) | β (13–30 Hz) | γ (30–45 Hz) |
 |---|---|---|---|---|---|
 | **STFT vainilla** | 5.8% | **27.9%** | **61.1%** | 5.3% | 0.0% |
-| CWT vainilla | 0.8% | 2.0% | 7.6% | 54.2% | 35.5% |
 | STFT Grad-CAM | 0.0% | 0.0% | 0.0% | 0.7% | 99.3% |
-| CWT Grad-CAM | 0.0% | 0.0% | 0.0% | 67.5% | 30.9% |
 
-**STFT con saliency vainilla concentra ~89% de la señal en bandas alpha (61.1%) + theta (27.9%)**, alineado con el biomarcador clínico clásico de EA (atenuación alfa, aumento theta; Fraga 2013, Cassani 2020). Las otras configuraciones se concentran en bandas beta/gamma altas, menos canónicas para EA.
+**STFT con saliency vainilla concentra ~89% de la señal en bandas alpha (61.1%) + theta (27.9%)**, alineado con el biomarcador clínico clásico de EA (atenuación alfa, aumento theta; Fraga 2013, Cassani 2020). Con Grad-CAM, en cambio, se concentra en gamma alta, menos canónica.
 
-Este resultado **sugiere** que STFT vainilla podría estar aprendiendo información clínicamente conocida, lo que es consistente con su mejor AUC media. Sin embargo, dada la naturaleza post-hoc del análisis y la baja consistencia de patches entre folds (sección 4.8, Jaccard ≈ 0.05), debe verse como una **observación correlacional**, no como prueba causal de que STFT vainilla "encuentra el biomarcador correcto".
+Este resultado **sugiere** que STFT vainilla podría estar aprendiendo información clínicamente conocida, coherente con su mayor AUC media. Es una **observación correlacional post-hoc**, no una prueba de superioridad: recuérdese que, a igualdad de eje de modulación, STFT y CWT-fair son indistinguibles (§4.3). Dada además la baja consistencia de patches entre folds (§4.8, Jaccard ≈ 0.05), no debe leerse como que STFT "encuentra el biomarcador correcto".
 
 ### 4.7 Importancia por canal (post-hoc, exploratorio)
 
@@ -343,30 +351,31 @@ Jaccard entre máscaras de patches de pares aleatorios de folds (200 pares por c
 
 ## 5. Discusión
 
-### 5.1 ¿CWT supera a STFT?
+### 5.1 ¿CWT supera a STFT? La comparación justa
 
-**Respuesta matizada: no se encuentra evidencia a favor de CWT bajo esta configuración**. La hipótesis original (CWT > STFT por mejor resolución en bajas frecuencias) no obtiene soporte, pero **tampoco se prueba formalmente la inferioridad intrínseca de CWT**. Cuatro líneas de observación:
+**Respuesta: a igualdad de eje de modulación, STFT y CWT-Morlet son estadísticamente indistinguibles.** Ni la hipótesis original (CWT > STFT) ni la inversa obtienen soporte. Lo importante es *cómo* se llega a esa conclusión, porque una comparación ingenua (STFT vs CWT nativa) engaña.
 
-1. **DeLong AUC por seed + combinación** (SVM vainilla): p por seed = 0.660, 0.051, 0.072; Stouffer/Fisher combinado = 0.061 (NS). Tras BH-FDR sobre las 3 comparaciones principales, ninguna sobrevive (q ≥ 0.10).
-2. **Wilcoxon por seed**: 0.893, 0.025, 0.338 — inconsistente entre semillas, sin replicación clara del efecto.
-3. **Varianza entre seeds**: STFT vainilla tiene SD baja (acc ±0.009, AUC ±0.022), CWT vainilla muy alta (acc ±0.081, AUC ±0.038), indicando que CWT es menos estable bajo este pipeline.
-4. **Pipeline-dependent**: con saliency Grad-CAM la tendencia se invierte (CWT > STFT en AUC, p=0.195 NS).
+**El eje de modulación era un confound, y controlarlo lo demuestra.** STFT (noverlap=64 a fs=200) tiene Nyquist de modulación ≈1.56 Hz; la CWT nativa lo preserva a 100 Hz. Tras recorte a 22.5 Hz y resize a 45 bins, las dos imágenes representan rangos físicos distintos del eje vertical. La condición **CWT-fair** iguala ese eje (decimando la envolvente a 3.125 Hz) manteniendo idéntica la transformada de portadora, lo que permite separar los dos efectos:
 
-**Por qué CWT puede estar penalizada en esta implementación, sin que necesariamente sea inferior**:
+| | AUC vainilla | vs STFT | AUC Grad-CAM | vs STFT |
+|---|---|---|---|---|
+| STFT | 0.856 | — | 0.713 | — |
+| CWT nativa | 0.778 | −0.078 (p=0.061) | 0.800 | +0.087 |
+| **CWT-fair** | 0.828 | **−0.028 (p=0.318)** | 0.769 | **+0.056 (p=0.587)** |
 
-- **🔴 Eje de frecuencia de modulación incomparable (confound DSP detectado en revisión externa)**: STFT (con noverlap=64 a fs=200 Hz) tiene Nyquist de modulación ≈1.56 Hz, mientras que CWT tiene Nyquist 100 Hz. Tras el recorte a 22.5 Hz y resize a 45 bins, **las dos imágenes representan rangos físicos distintos** del eje de modulación (STFT: 0-1.56 Hz interpolado; CWT: 0-22.5 Hz subsampled). Esto es más serio que el resize per se y posiblemente el factor dominante de las diferencias observadas.
-- **Resize bilinear a 45×45**: iguala artificialmente las resoluciones nominales de salida pero, combinado con el desajuste anterior, produce dos representaciones distintas etiquetadas como equivalentes.
-- **CWT con `cmor1.5-1.0` y 32 escalas log**: una elección entre muchas posibles, sin tuning específico ni cone-of-influence.
-- **Hiperparámetros del CNN** (Lopes 2023) fueron optimizados para input STFT; CWT puede requerir tuning específico.
-- **Las saliency maps de STFT y CWT están casi descorrelacionadas** (r ≈ -0.09 vainilla, -0.24 Grad-CAM): no se debe interpretar como "anti-correlación" (r es estadísticamente indistinguible de 0); más bien indica **ortogonalidad/independencia**. Dada la inestabilidad de patches entre folds (Jaccard ≈ 0.05), parte de este r ≈ 0 puede ser puro ruido fold-a-fold, no estructura complementaria real.
+**El patrón es consistente en dirección** (aunque de magnitud distinta): en vainilla la CWT nativa parecía *peor* que STFT y en Grad-CAM parecía *mejor*; en **ambos casos**, igualar el eje de modulación **mueve la CWT hacia la STFT** (reduce |Δ AUC| de 0.078→0.028 en vainilla, ~64%, y de 0.087→0.056 en Grad-CAM, ~36%). Es decir, las diferencias aparentes en las dos direcciones eran **en gran parte** el artefacto de DSP, no la transformada (con Grad-CAM el eje explica solo ~un tercio, y el efecto por seed es de signo mixto: −0.021, +0.088, +0.027). La comparación justa (STFT vs CWT-fair) es no significativa en ambos métodos de saliency, y también lo es la CWT-nativa vs CWT-fair (p=0.283, 0.527), confirmando que el eje explica el grueso de la brecha.
 
-**Lectura honesta y revisada**: este trabajo NO sostiene una comparación equitativa entre transformadas T-F en sí mismas, sino entre **dos pipelines específicos** (uno con eje de modulación efectivamente ≤1.56 Hz, otro con eje ≤22.5 Hz). La afirmación defendible es: "bajo el pipeline implementado, CWT no muestra ventaja sobre STFT y es menos estable entre seeds". Cualquier generalización a "CWT-Morlet vs STFT en EEG-AD" requiere igualar los ejes de modulación primero.
+**Matices que persisten** (no invalidan lo anterior, pero acotan la generalización):
 
-### 5.2 El método de saliency cambia el ranking
+- **CWT-fair iguala "hacia abajo"**: descarta las modulaciones rápidas (>1.56 Hz) que la CWT nativa capturaba. Es fisiológicamente razonable (la AM diagnóstica en EA es lenta; Fraga 2013) y es la elección que hace la comparación *conservadora* respecto a la STFT. La alternativa —igualar "hacia arriba" recomputando STFT con hop fino— exploraría si esas modulaciones rápidas aportan algo; se deja como trabajo futuro (§5.5).
+- **Mayor varianza de la CWT** entre seeds (AUC ±0.031–0.045 fair vs ±0.022 STFT), consistente con menor estabilidad.
+- **CWT con `cmor1.5-1.0`, 32 escalas log**, sin tuning específico ni cone-of-influence; los hiperparámetros del CNN fueron optimizados por Lopes para input STFT.
 
-**Hallazgo metodológico relevante**: con saliency Grad-CAM, CWT tiende a tener mejor AUC media; con vainilla (paper-faithful), STFT tiene mejor AUC media. Los saliency maps de los dos métodos no se parecen (r ≈ 0.1 STFT, -0.17 CWT), lo que indica que **descubren regiones distintas del modulation spectrum**.
+**Lectura defendible**: *bajo un eje de modulación equiparable, la elección STFT vs CWT-Morlet no cambia el poder discriminativo de este pipeline*. Esto es más fuerte y más honesto que el resultado ingenuo, porque atribuye correctamente las diferencias observadas a su causa (DSP), no a la transformada.
 
-Esto implica que comparaciones del tipo "transformada X supera transformada Y" son sensibles al método de saliency y al pipeline completo. Para evaluar transformadas T-F de forma aislada del método de interpretabilidad sería deseable comparar también con CNN end-to-end sin patches/SVM (donde las diferencias son más pequeñas y NS, sección 4.1).
+### 5.2 El método de saliency cambia el ranking aparente — pero también vía el confound
+
+**Hallazgo metodológico**: con la CWT **nativa**, el ranking se invierte según el método de saliency (Grad-CAM: CWT>STFT; vainilla: STFT>CWT). Pero esta sensibilidad **se atenúa con CWT-fair**: al quitar el confound del eje, las dos representaciones convergen bajo *ambos* métodos de saliency. Parte de la "dependencia del método de saliency" era, otra vez, el eje de modulación interactuando con cómo cada método pondera las regiones. Los saliency maps de STFT y CWT nativa están **débilmente correlacionados, cerca de cero** (Pearson r ≈ −0.09 vainilla, −0.24 Grad-CAM, promedio de 3 seeds; con n=3 no se puede afirmar independencia), lo que sigue indicando que descubren regiones distintas — pero eso ya no se traduce en una diferencia de desempeño una vez igualado el eje.
 
 ### 5.3 Replicación del paper
 
@@ -392,7 +401,7 @@ Lo defendible es que **el pipeline replicado funciona y produce métricas compat
 | Diferencia | — | — | — | **+0.129** | +0.088 |
 | Fisher exact F vs M | — | — | OR ≈ 0.375 | **p = 0.201** | Cohen h ≈ 0.35 |
 
-**Análisis de poder estadístico**: con un tamaño de efecto Cohen h ≈ 0.35 (moderado), detectar la diferencia observada al 80% de poder y α=0.05 requeriría aproximadamente **N ≈ 64 sujetos por grupo (es decir, ~129 sujetos totales sumando F y M)**, según la fórmula con transformación arcoseno: n/grupo = ((z₁₋α/₂ + z₁₋β)/h)² = ((1.96+0.84)/0.35)² ≈ 64. Nota: en versiones anteriores de este informe se reportaba "129 sujetos por grupo", lo cual confundía total con tamaño por grupo. El tamaño actual (35F + 30M) tiene poder ~25-30% para esa diferencia.
+**Análisis de poder estadístico**: con un tamaño de efecto Cohen h ≈ 0.35 (moderado), detectar la diferencia observada al 80% de poder y α=0.05 requeriría aproximadamente **N ≈ 64 sujetos por grupo (≈128 sujetos totales sumando F y M)**, según la fórmula con transformación arcoseno: n/grupo = ((z₁₋α/₂ + z₁₋β)/h)² = ((1.96+0.84)/0.35)² ≈ 64. Nota: en versiones anteriores de este informe se reportaba "129 sujetos por grupo", lo cual confundía total con tamaño por grupo. El tamaño actual (35F + 30M) tiene poder ~25-30% para esa diferencia.
 
 **Lectura prudente**: **no se detectó diferencia significativa entre géneros, pero el poder estadístico es limitado** — la diferencia absoluta de 12.9 puntos en accuracy es relevante en magnitud, y no podemos descartar un sesgo real del modelo. Una validación con dataset balanceado por género o con N mayor sería necesaria antes de afirmar robustez al sesgo.
 
@@ -402,11 +411,11 @@ Lo defendible es que **el pipeline replicado funciona y produce métricas compat
 
 2. **Grid search de patches heurístico, no nested CV**: el script real (`scripts/04_extract_saliency_features.py:209-240`) implementa una selección por separabilidad de la saliency map (max contraste AD vs HC sobre los píxeles candidatos), NO una validación con SVM en val set. La función `grid_search_patches()` con validación SVM existe en `src/feature_extraction.py:87-125` pero **no es invocada por el pipeline final**. Esto introduce un sesgo de selección menor pero existente y constituye una desviación de fidelidad respecto al paper.
 
-3. **BH-FDR/Bonferroni post-hoc**: la corrección se aplicó después de ver los resultados (sección 4.3.1), no como pre-registro. Solo la comparación SVM vainilla sobrevive (p ajustado=0.042 marginal).
+3. **BH-FDR/Bonferroni post-hoc**: la corrección se aplicó después de ver los resultados (sección 4.3.2), no como pre-registro. Ninguna comparación justa (STFT vs CWT-fair) se acerca a la significancia (q ≈ 0.68, m=3).
 
-4. **🔴 Eje de frecuencia de modulación incomparable entre STFT y CWT** (confound DSP detectado en revisión externa, no identificado en la implementación inicial): con los parámetros del pipeline (STFT noverlap=64, CWT preserva fs=200 Hz), las imágenes 45×45 finales representan rangos físicos drásticamente distintos del eje de modulación — STFT efectivamente 0-1.56 Hz interpolado, CWT 0-22.5 Hz subsampled. Esta es probablemente la limitación DSP más seria del trabajo. Las conclusiones STFT vs CWT cuantitativas reflejan este artefacto del pipeline, no una comparación equitativa de las transformadas T-F en sí mismas. Solución correcta para trabajo futuro: decimar la envolvente CWT a la tasa de muestreo de la envolvente STFT antes de la FFT de modulación.
+4. **CWT-fair "iguala hacia abajo" el eje de modulación**: para comparar STFT vs CWT a igualdad de eje se decima la envolvente de la CWT a 3.125 Hz (Nyquist de modulación 1.56 Hz), lo que **descarta las modulaciones rápidas** (>1.56 Hz) que la CWT nativa capturaba. Es la definición *conservadora* de "justo" (y fisiológicamente razonable: la AM diagnóstica en EA es lenta, Fraga 2013), pero no es única. La definición alternativa —igualar "hacia arriba" recomputando la STFT con hop fino para alcanzar el Nyquist de la CWT— probaría si esas modulaciones rápidas aportan poder discriminativo; se deja como trabajo futuro. Por eso la conclusión es "a igualdad de eje de modulación *lento*", no "en todo el rango de modulación".
 
-5. **Resize bilinear** del modspec a 45×45 oculta el desajuste anterior y puede penalizar artificialmente a CWT cuya ventaja teórica está en la resolución variable.
+5. **Resize bilinear** del modspec a 45×45: tras igualar el eje (CWT-fair), tanto STFT como CWT-fair parten de ~13 bins reales interpolados a 45, así que el resize ya no introduce asimetría entre ellas; la CWT nativa sí quedaba subsampleada (~180→45).
 
 6. **CWT subexplorada**: solo `cmor1.5-1.0` con 32 escalas log; sin cone-of-influence; sin tuning específico de hiperparámetros para CWT input. Atenuante: la T-F se computa sobre la señal completa antes de rebanar epochs, evitando edge effects en bordes de epoch, pero el soporte temporal del wavelet a 0.5 Hz se extiende a varios segundos y puede contaminar epochs vecinos en bajas frecuencias.
 
@@ -434,11 +443,11 @@ Lo defendible es que **el pipeline replicado funciona y produce métricas compat
 
 Más allá de la replicación, este TFM aporta:
 
-1. **Evaluación multi-seed** del pipeline de Lopes: el paper original no reporta varianza por seed. Aquí se cuantifica y se muestra que algunas configuraciones (CWT vainilla, acc ±0.081) tienen alta varianza, lo que cuestiona la robustez de conclusiones single-seed.
-2. **Comparación rigurosa STFT vs CWT** con análisis estadístico explícito (DeLong, Wilcoxon, BH-FDR) y reconocimiento de las limitaciones del diseño (resize, CWT subexplorada).
-3. **Observación de pipeline-dependencia**: el método de saliency cambia el ranking entre STFT y CWT — un punto metodológico relevante para la comunidad.
+1. **Evaluación multi-seed** del pipeline de Lopes: el paper original no reporta varianza por seed. Aquí se cuantifica y se muestra que algunas configuraciones (CWT nativa vainilla, acc ±0.081) tienen alta varianza, lo que cuestiona la robustez de conclusiones single-seed.
+2. **Comparación STFT vs CWT controlando el confound DSP del eje de modulación** — el aporte metodológico central. Se identifica que STFT y CWT nativa tienen ejes de modulación no equiparables, se introduce la condición **CWT-fair** que los iguala, y se demuestra que las diferencias aparentes (en ambas direcciones y ambos métodos de saliency) eran mayoritariamente ese artefacto: a igualdad de eje, las transformadas son indistinguibles (DeLong + Stouffer + BH-FDR). Esto es un patrón replicable de "comparación justa de representaciones T-F" útil para la comunidad.
+3. **Observación de pipeline-dependencia y su origen**: el método de saliency cambia el ranking aparente entre STFT y CWT nativa, pero la sensibilidad se atenúa al controlar el eje — mostrando que el confound interactuaba con el método de saliency.
 4. **Conexión exploratoria con literatura clínica**: STFT + vainilla concentra saliency en bandas alpha-theta y canales occipito-temporales, coherente con biomarcadores conocidos de EA (Fraga 2013, Cassani 2020).
-5. **Auditoría DSP + ML interna documentada** en `docs/AUDIT.md` y validada por revisión externa.
+5. **Auditoría DSP + ML interna documentada** en `docs/AUDIT.md` y validada por dos rondas de revisión externa + revisión adversarial multi-agente del código del fix.
 6. **Reproducibilidad total**: repo público con `requirements-lock.txt`, seeds fijas, configs YAML, tests unitarios pasando, y notebook ejecutable.
 
 ---
@@ -447,32 +456,28 @@ Más allá de la replicación, este TFM aporta:
 
 1. **El pipeline de Lopes et al. 2023 fue replicado funcionalmente** sobre el dataset público ds004504. SVM con saliency vainilla y STFT alcanza Acc = 0.764 ± 0.009, AUC = 0.856 ± 0.022 (3 seeds), en el orden de magnitud del 0.71 ± 0.02 reportado por Lopes en T2. Las diferencias de datasets, poblaciones y detalles de anti-leakage impiden una comparación numérica estricta; lo defendible es que el pipeline funciona sobre datos públicos independientes.
 
-2. **La comparación STFT vs CWT no es concluyente y está confundida por DSP**. Tres caveats independientes:
+2. **A igualdad de eje de modulación, STFT y CWT-Morlet son estadísticamente indistinguibles; las diferencias aparentes eran un artefacto de DSP.** STFT (Nyquist de modulación 1.56 Hz) y CWT nativa (Nyquist 100 Hz) no codifican el mismo eje vertical antes del resize a 45×45. La condición de control **CWT-fair** (CWT con la envolvente decimada para igualar ese eje) muestra:
+   - Con **vainilla**, la CWT pasa de −0.078 AUC vs STFT (nativa, p=0.061) a **−0.028 (fair, p=0.318)**.
+   - Con **Grad-CAM**, pasa de +0.087 (nativa) a **+0.056 (fair, p=0.587)**.
+   - En **ambas direcciones** igualar el eje mueve la CWT hacia la STFT (la magnitud difiere: ~64% de la brecha en vainilla, ~36% en Grad-CAM). Ninguna comparación justa (STFT vs CWT-fair) sobrevive BH-FDR (q ≈ 0.68, m=3). **No encontramos evidencia de que la transformada cambie el desempeño una vez controlado el eje** (potencia limitada, 3 seeds); ni la hipótesis original (CWT > STFT) ni la inversa obtienen evidencia.
 
-   - **Inferencia estadística**: con saliency vainilla, AUC media de STFT (0.856 ± 0.022) supera la de CWT (0.778 ± 0.038), pero **DeLong por seed + combinación Stouffer/Fisher da p ≈ 0.061 (NS)** y **tras BH-FDR sobre las 3 comparaciones principales ninguna sobrevive (q ≥ 0.10)**. La inferencia formal NO alcanza significancia al α=0.05. Ver §4.3.1–§4.3.2.
-   - **Confound DSP del eje de modulación**: STFT (Nyquist 1.56 Hz, 13 bins reales interpolados a 45) y CWT (Nyquist 100 Hz, 180 bins subsampleados a 45) codifican contenido espectral distinto en su eje vertical. La supuesta ventaja de STFT puede deberse en parte a esta asimetría no controlada (ver §3.3, §5.1). Una comparación justa requeriría unificar el `dt` temporal post-T-F.
-   - **Sensibilidad a hiperparámetros**: resize 45×45 e hiperparámetros específicos de CWT-Morlet (cmor1.5-1.0, 32 escalas) son configuraciones sin tuning exhaustivo. La hipótesis original "CWT > STFT" no obtiene evidencia, pero **tampoco se prueba la dirección opuesta con rigor estadístico**.
+3. **La sensibilidad del ranking al método de saliency también era, en parte, el confound**: con la CWT nativa el ranking se invierte según se use Grad-CAM (CWT parece mejor) o vainilla (STFT parece mejor); esa inversión **se atenúa con CWT-fair**. Los saliency maps STFT↔CWT están **débilmente correlacionados (cerca de cero)** (r ≈ −0.09 vainilla, −0.24 Grad-CAM) — descubren regiones distintas, pero ello no se traduce en diferencia de desempeño una vez igualado el eje.
 
-3. **El ranking STFT vs CWT depende del método de saliency**: con Grad-CAM la tendencia se invierte (CWT > STFT, NS). Las saliency maps de STFT y CWT son **estadísticamente ortogonales** (r ≈ −0.09 vainilla, sin Pearson p<0.05), lo que sugiere que pueden capturar información **complementaria** — un ensemble (late fusion o stacking) es una hipótesis natural a futuro.
-
-4. **Observaciones exploratorias (post-hoc)**: STFT + vainilla concentra saliency en bandas alpha (61%) + theta (28%) y canales occipito-temporales (O1, O2, T5, T6), coherente con biomarcadores clásicos de EA (Fraga 2013). Esta convergencia con la literatura clínica es prometedora pero requiere validación en datasets independientes.
+4. **Observaciones exploratorias (post-hoc)**: STFT + vainilla concentra saliency en bandas alpha (61%) + theta (28%) y canales occipito-temporales (O1, O2, T5, T6), coherente con biomarcadores clásicos de EA (Fraga 2013). Prometedor pero requiere validación en datasets independientes.
 
 5. **Hallazgos metodológicos para la comunidad**:
-   - El método de saliency afecta sustantivamente las conclusiones cuantitativas; reportar siempre el método específico.
-   - Los patches descubiertos por saliency-guided ML son altamente inestables entre folds (Jaccard ≈ 0.05): la narrativa de "biomarcadores reproducibles" debe matizarse.
-   - Reportar varianza por seed es esencial: configuraciones con SD alta (CWT vainilla, ±0.081) revelan inestabilidad oculta en single-seed.
-   - El poder estadístico debe acompañar siempre las afirmaciones de "ausencia de efecto" (e.g., análisis por género).
+   - **Comparar representaciones T-F exige igualar el eje de modulación**: diferencias de resolución temporal nativa (CWT preserva fs; STFT muestrea a fs/hop) crean un confound que puede invertir el ranking aparente. La condición CWT-fair es un control replicable.
+   - El método de saliency afecta las conclusiones cuantitativas; reportar siempre el método específico.
+   - Los patches saliency-guided son inestables entre folds (Jaccard ≈ 0.05): matizar "biomarcadores reproducibles".
+   - Reportar varianza por seed y poder estadístico es esencial.
 
 6. **Recomendaciones para trabajos futuros**:
-   - **Unificar el eje de modulación entre STFT y CWT** (downsample temporal post-CWT a `dt` análogo o forzar mismo Nyquist) — pre-requisito para una comparación STFT vs CWT honesta.
-   - **Ensemble STFT+CWT** (late fusion) explotando ortogonalidad observada de saliency.
-   - **CWT tuning específico**: explorar cmor1-1, n_scales mayor, cone-of-influence.
-   - **Comparación T-F sin resize forzado**: dos CNNs distintas para resoluciones nativas.
-   - **Test externo** en otro dataset EEG-AD para validar generalización.
+   - **Igualar el eje "hacia arriba"**: recomputar la STFT con hop fino para alcanzar el Nyquist de la CWT, y ver si las modulaciones rápidas (>1.56 Hz) que CWT-fair descarta aportan poder discriminativo.
+   - **CWT tuning específico**: cmor1-1, n_scales mayor, cone-of-influence.
+   - **Ensemble STFT+CWT** (late fusion) explotando la baja correlación (posible complementariedad) de los saliency maps.
+   - **Test externo** en otro dataset EEG-AD.
    - **Banco de filtros con bandas no uniformes** (Condición C de la propuesta original).
-   - **Nested CV** para grid search de patches con validación real.
-   - **Dataset balanceado por género o N mayor** para validar robustez del modelo.
-   - **Más seeds (10+)** para inferencias estadísticas más sólidas con DeLong por seed.
+   - **Nested CV** para grid search de patches; **dataset balanceado por género**; **≥10 seeds**.
 
 ---
 

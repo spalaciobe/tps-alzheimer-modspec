@@ -97,7 +97,7 @@ python scripts/12_channel_importance.py
 
 Ver [`docs/plan.md`](docs/plan.md).
 
-## Resultados finales (full multi-seed, 3 seeds, 2026-06)
+## Resultados finales (full multi-seed, 3 seeds, 2026-07)
 
 Ver [`results/RESULTS_full.md`](results/RESULTS_full.md) y [`docs/INFORME_TFM.md`](docs/INFORME_TFM.md).
 
@@ -106,9 +106,9 @@ Ver [`results/RESULTS_full.md`](results/RESULTS_full.md) y [`docs/INFORME_TFM.md
 | Métrica | Valor (n=3 seeds) |
 |---|---|
 | Accuracy | **0.764 ± 0.009** |
-| F1 macro | **0.762 ± 0.011** |
+| F1 macro | **0.760 ± 0.008** |
 | AUC | **0.856 ± 0.022** |
 
 Comparación con paper Lopes 2023: el paper reporta Acc 0.71 ± 0.02 en T2 (N vs AD). Este TFM obtiene cifras en el mismo rango (~+5 puntos) sobre datos públicos independientes, lo cual es **el objetivo de una replicación** — no una comparación numérica estricta (datasets y poblaciones diferentes).
 
-**Conclusión matizada**: la hipótesis original (CWT > STFT) **no obtiene evidencia a favor** bajo esta configuración. SVM vainilla STFT tiene AUC media mayor, pero la inferencia formal (DeLong AUC por seed + combinación Stouffer/Fisher) da **p ≈ 0.061 (NS)** y tras BH-FDR ninguna comparación sobrevive (q ≥ 0.10); el Wilcoxon por seed es inconsistente (0.893, 0.025, 0.338). Se interpreta como **ausencia de evidencia concluyente en ninguna dirección**. Más detalles y limitaciones en [`docs/INFORME_TFM.md`](docs/INFORME_TFM.md).
+**Conclusión (comparación DSP-justa)**: la comparación ingenua STFT vs CWT estaba **confundida por el eje de modulación** (STFT muestrea la envolvente a fs/hop=3.125 Hz → Nyquist mod. 1.56 Hz; la CWT nativa la preserva a 200 Hz → 100 Hz). Se añade la condición de control **CWT-fair** (CWT con el eje de modulación igualado a la STFT). Resultado: al igualar el eje, la brecha aparente STFT↔CWT **se reduce sustancialmente en ambos métodos de saliency** (vainilla ~64%: CWT-fair AUC 0.828 vs STFT 0.856, DeLong p=0.318; Grad-CAM ~36%: p=0.587), y **ninguna comparación justa sobrevive BH-FDR** (q≈0.68). Es decir, **a igualdad de eje de modulación STFT y CWT-Morlet son estadísticamente indistinguibles**: las diferencias aparentes eran **en gran parte** el artefacto de DSP, no la transformada. *Caveat*: CWT-fair "iguala hacia abajo" (descarta modulaciones >1.56 Hz); es una de dos definiciones de comparación justa (la alternativa, subir la STFT con hop fino, queda como trabajo futuro). Detalles en [`docs/INFORME_TFM.md`](docs/INFORME_TFM.md).

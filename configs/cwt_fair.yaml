@@ -1,0 +1,15 @@
+method: cwt_fair
+target_shape: [45, 45]
+carrier_range_hz: [0.5, 45.0]
+mod_range_hz: [0.0, 22.5]
+wavelet: cmor1.5-1.0        # idéntico a cwt.yaml — SOLO cambia el eje de modulación
+n_scales: 32
+scale_spacing: log
+# Iguala la tasa de la envolvente a la de la STFT (fs/hop = 200/64 = 3.125 Hz),
+# de modo que el Nyquist de modulación sea 1.5625 Hz en AMBAS transformadas y el
+# eje vertical del modspec codifique el mismo rango físico. Sin esto, la CWT
+# tiene Nyquist de modulación 100 Hz y la comparación STFT vs CWT queda
+# confundida por DSP (ver docs/INFORME_TFM §3.3, §5.1).
+mod_env_rate_hz: 3.125
+log_power: true
+eps: 1.0e-10
