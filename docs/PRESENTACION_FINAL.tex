@@ -30,7 +30,7 @@
     Facultad de Minas \\[4pt]
     \textit{Tópicos en Procesamiento Digital de Señales} \\
     Prof.\ Freddy Bolaños}
-\date{Junio de 2026}
+\date{Julio de 2026}
 
 \begin{document}
 
@@ -136,13 +136,14 @@ un SVM las usa como \emph{features}.
 \end{column}
 \begin{column}{0.48\textwidth}
 \small
-\textbf{Mi diseño}: ablation completa
+\textbf{Mi diseño}: ablation con \textbf{3 representaciones T-F}
 \[
-\underbrace{\{\text{STFT, CWT}\}}_{2} \times
+\underbrace{\{\text{STFT, CWT, CWT-fair}\}}_{3} \times
 \underbrace{\{\text{Grad-CAM, vainilla}\}}_{2} \times
 \underbrace{3\text{ seeds}}_{}
 \]
-Anti-leakage estricto: todo se calcula \textbf{por fold}.
+CWT-fair = control (aparece en la slide 5). Anti-leakage estricto:
+todo se calcula \textbf{por fold}.
 \end{column}
 \end{columns}
 
@@ -157,127 +158,124 @@ Anti-leakage estricto: todo se calcula \textbf{por fold}.
 \begin{column}{0.52\textwidth}
 \centering
 \includegraphics[width=\linewidth]{figures_informe_final/auc_master_summary.png}\\[2pt]
-{\scriptsize AUC media $\pm$ SD entre 3 seeds, 6 configuraciones.}
+{\scriptsize AUC media $\pm$ SD entre 3 seeds.}
 \end{column}
 \begin{column}{0.44\textwidth}
 \small
 \begin{itemize}
     \item Mejor configuración: \textbf{SVM vainilla + STFT}
-    (la \emph{fiel al paper}):
-    \[
-    \text{AUC} = \mathbf{0.856 \pm 0.022}
-    \]
-    \item En el rango del paper original
-    ($\text{Acc}\ 0.71 \pm 0.02$), sobre \textbf{datos públicos
-    independientes}.
+    (la \emph{fiel al paper}): AUC $= \mathbf{0.856 \pm 0.022}$,
+    en el rango del paper ($\text{Acc}\ 0.71 \pm 0.02$) sobre
+    \textbf{datos públicos}.
 \end{itemize}
 
 \vfill
-\begin{block}{La pregunta que sigue}
-\small STFT tiene \textbf{mayor AUC media} que CWT
-($0.856$ vs $0.778$). \\
-\textit{Pero ¿esa diferencia es real, o es ruido entre semillas?}
+\begin{block}{Y aparece una diferencia curiosa}
+\small STFT vs CWT \textbf{cambia de signo} según el método de saliency:
+con vainilla STFT parece mejor ($0.856$ vs $0.778$); con Grad-CAM la CWT
+parece mejor ($0.800$ vs $0.713$). \\
+\textit{¿Qué está pasando realmente?}
 \end{block}
 \end{column}
 \end{columns}
 
 \vfill
 \centering\small
-\textbf{Replicación funcional: exitosa.} Antes de afirmar que una
-transformada gana, hay que probarlo bien.
+\textbf{Replicación funcional: exitosa.} Pero antes de concluir algo
+sobre STFT vs CWT, hay que mirar el primer paso con lupa.
 
 \end{frame}
 
 % ============================================================
-% SLIDE 5: El giro (rigor)
+% SLIDE 5: El giro (confound identificado y controlado)
 % ============================================================
-\begin{frame}{El giro: el rigor me obligó a frenar --- dos veces}
+\begin{frame}{El giro: no estaba comparando peras con peras}
 
 \begin{columns}[T]
 \begin{column}{0.50\textwidth}
-\textbf{Freno 1 --- La estadística.}
-\small La inferencia correcta es DeLong AUC \textbf{por seed}
-(preservando la varianza entre inicializaciones) y combinando con
-Stouffer/Fisher, con corrección BH-FDR:
+\small
+Las dos imágenes son $45\times45$, pero su \textbf{eje de modulación}
+(vertical) no mide lo mismo:
 
 \begin{table}
 \centering
 \scriptsize
 \begin{tabular}{l c c}
 \toprule
-Comparación (vainilla) & $p$ (Stouffer) & BH-FDR $q$ \\
+ & STFT & CWT nativa \\
 \midrule
-SVM STFT vs CWT      & $0.061$ & $0.102$ \\
-SVM Grad-CAM STFT vs CWT & $0.068$ & $0.102$ \\
-CNN STFT vs CWT      & $0.266$ & $0.266$ \\
+Nyquist modulación & $\mathbf{1.56}$ Hz & $100$ Hz \\
+Bins reales & $\sim$13 & $\sim$180 \\
 \bottomrule
 \end{tabular}
 \end{table}
-\centering\footnotesize\textbf{Ninguna comparación sobrevive
-($q \geq 0.10$).}
+
+\vfill
+Una comparación STFT vs CWT mezcla \textbf{dos cosas}: la transformada
+\emph{y} la resolución del eje de modulación.
 \end{column}
 \begin{column}{0.47\textwidth}
-\textbf{Freno 2 --- El DSP.}
-\small Las dos imágenes son $45\times45$, pero su \emph{eje de
-modulación} no mide lo mismo:
-
-\begin{table}
-\centering
-\scriptsize
-\begin{tabular}{l c c}
-\toprule
- & STFT & CWT \\
-\midrule
-Nyquist mod. & $\mathbf{1.56}$ Hz & $100$ Hz \\
-Rango real   & $[0, 1.56]$ & $[0, 22.5]$ Hz \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\vfill
-\begin{alertblock}{Conclusión honesta}
-\small La comparación STFT vs CWT \textbf{no es concluyente} --- y
-además está \textbf{confundida por DSP}. No es una comparación justa
-entre transformadas.
+\begin{alertblock}{La solución: CWT-fair}
+\small Una tercera condición: la \textbf{misma CWT}, pero con la
+envolvente decimada para que su eje de modulación \textbf{iguale al de
+la STFT}.
 \end{alertblock}
+
+\small
+\begin{itemize}
+    \item \textbf{STFT vs CWT-fair} $\Rightarrow$ aísla la
+    \emph{transformada} (comparación justa).
+    \item \textbf{CWT nativa vs CWT-fair} $\Rightarrow$ mide el efecto
+    del \emph{eje} (el artefacto).
+\end{itemize}
 \end{column}
 \end{columns}
 
 \end{frame}
 
 % ============================================================
-% SLIDE 6: Lo que de verdad encontré
+% SLIDE 6: El resultado (convergencia)
 % ============================================================
-\begin{frame}{Lo que de verdad encontré}
+\begin{frame}{El resultado: al igualar el eje, STFT $\approx$ CWT}
 
 \begin{columns}[T]
-\begin{column}{0.46\textwidth}
+\begin{column}{0.54\textwidth}
 \centering
-\includegraphics[width=\linewidth]{figures_informe_final/saliency_compare.png}\\[2pt]
-{\scriptsize Saliency (vainilla): STFT y CWT miran regiones distintas.}
+\small AUC (3 seeds) --- CWT-fair \textbf{se mueve hacia STFT} en las dos direcciones:
+\begin{table}
+\centering
+\small
+\begin{tabular}{l c c c}
+\toprule
+Saliency & STFT & CWT nativa & \textbf{CWT-fair} \\
+\midrule
+Vainilla & $0.856$ & $0.778$ & $\mathbf{0.828}$ \\
+Grad-CAM & $0.713$ & $0.800$ & $\mathbf{0.769}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+\vspace{2pt}
+{\scriptsize Vainilla: brecha $-0.078 \to -0.028$. \quad
+Grad-CAM: $+0.087 \to +0.056$.}
 \end{column}
-\begin{column}{0.50\textwidth}
-\begin{enumerate}
-    \item \textbf{El método de saliency cambia el ranking}: con
-    Grad-CAM, CWT parece ganar; con vainilla, STFT. \\
-    Los mapas son \textbf{estadísticamente ortogonales}
-    ($r \approx -0.09$) $\Rightarrow$ \emph{posible complementariedad}
-    (idea de ensemble a futuro).
-
-    \vfill
-    \item \textbf{El modelo redescubre biología conocida}: STFT
-    vainilla concentra $\sim$89\% de su atención en bandas
-    $\boldsymbol{\alpha + \theta}$ y canales
-    \textbf{occipito-temporales} (O1, O2, T5, T6) --- justo donde la
-    clínica localiza el Alzheimer.
-\end{enumerate}
+\begin{column}{0.42\textwidth}
+\begin{block}{Comparación justa (STFT vs CWT-fair)}
+\small DeLong por seed + Stouffer:
+\begin{itemize}
+    \item Vainilla: $p = 0.318$
+    \item Grad-CAM: $p = 0.587$
+\end{itemize}
+\centering\footnotesize Ninguna sobrevive BH-FDR ($q \geq 0.58$).
+\end{block}
 \end{column}
 \end{columns}
 
 \vfill
-\centering\small
-El \emph{qué} descubre el modelo depende del pipeline completo, no solo
-de la transformada. \textit{Ese fue el hallazgo más interesante.}
+\centering
+\textbf{A igualdad de eje de modulación, STFT y CWT-Morlet son
+indistinguibles.} \\
+\small La diferencia aparente (en ambos sentidos) era el \textbf{artefacto
+de DSP}, no la transformada.
 
 \end{frame}
 
@@ -290,17 +288,18 @@ de la transformada. \textit{Ese fue el hallazgo más interesante.}
 \begin{column}{0.60\textwidth}
 \begin{enumerate}
     \item \textbf{La replicación funciona} sobre datos públicos ---
-    el método de Lopes es reproducible.
-    \item \textbf{La hipótesis CWT $>$ STFT no se sostiene}\ldots pero
-    la contraria tampoco: el rigor manda.
-    \item \textbf{Lecciones metodológicas} más valiosas que el
-    resultado: reportar varianza por seed, elegir bien el estadístico,
-    y comparar transformadas solo con ejes equivalentes.
+    el método de Lopes es reproducible (AUC $0.856$).
+    \item \textbf{Comparar transformadas T-F exige igualar el eje de
+    modulación.} Sin ese control, un artefacto de DSP puede invertir el
+    ranking aparente. Con el control (CWT-fair), STFT y CWT empatan.
+    \item \textbf{Aporte metodológico} $>$ el resultado numérico:
+    identificar el confound, diseñar el control, y demostrar que la
+    diferencia era un artefacto.
 \end{enumerate}
 
 \vfill
-\small\textbf{Lo primero a futuro}: unificar el eje de modulación
-antes de volver a comparar STFT vs CWT.
+\small\textbf{A futuro}: igualar el eje ``hacia arriba'' (STFT con hop
+fino) para ver si las modulaciones rápidas de la CWT aportan algo.
 \end{column}
 \begin{column}{0.36\textwidth}
 \begin{block}{Reproducibilidad}
@@ -308,7 +307,7 @@ antes de volver a comparar STFT vs CWT.
 \begin{itemize}
     \item Repo público, 3 seeds fijas.
     \item Anti-leakage estricto LOSO.
-    \item Informe + auditoría externa.
+    \item Informe + auditorías (externa y multi-agente del código).
 \end{itemize}
 \end{block}
 \centering
