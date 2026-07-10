@@ -522,7 +522,7 @@ Más allá de la replicación, este TFM aporta:
 6. **Recomendaciones para trabajos futuros**:
    - **Igualar el eje "hacia arriba"**: recomputar la STFT con hop fino para alcanzar el Nyquist de la CWT, y ver si las modulaciones rápidas (>1.56 Hz) que CWT-fair descarta aportan poder discriminativo.
    - **CWT tuning específico**: cmor1-1, n_scales mayor, cone-of-influence.
-   - **Ensemble STFT+CWT** (late fusion) explotando la baja correlación (posible complementariedad) de los saliency maps.
+   - **Confirmar la complementariedad del late-fusion STFT+CWT-fair**: el indicio preliminar (AUC 0.867 ± 0.014 vs STFT 0.856, §4.9) es prometedor pero pequeño e inconsistente entre seeds y no se sostiene en el ensemble mediana; validar con ≥10 seeds y un test formal antes de afirmar complementariedad. Sería el camino más directo para convertir el resultado nulo (STFT≈CWT) en un hallazgo positivo.
    - **Test externo** en otro dataset EEG-AD.
    - **Banco de filtros con bandas no uniformes** (Condición C de la propuesta original).
    - **Nested CV** para grid search de patches; **dataset balanceado por género**; **≥10 seeds**.

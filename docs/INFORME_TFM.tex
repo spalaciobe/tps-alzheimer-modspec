@@ -1206,8 +1206,13 @@ la replicación \emph{leakage-free} y el aporte metodológico de DSP
         descarta aportan poder discriminativo.
         \item CWT tuning específico (cmor1-1, $n_\text{scales}$ mayor,
         cone-of-influence).
-        \item Ensemble STFT~+~CWT (late fusion) explotando la baja
-        correlación (posible complementariedad) de los saliency maps.
+        \item \textbf{Confirmar la complementariedad del late-fusion
+        STFT+CWT-fair}: el indicio preliminar (AUC $0.867 \pm 0.014$ vs
+        STFT 0.856, §4.9) es prometedor pero pequeño, inconsistente entre
+        seeds y no se sostiene en el ensemble mediana; validar con
+        $\geq10$ seeds y un test formal. Sería el camino más directo para
+        convertir el resultado nulo (STFT$\approx$CWT) en un hallazgo
+        positivo.
         \item Test externo en otro dataset EEG-AD.
         \item Banco de filtros con bandas no uniformes.
         \item Nested CV para grid search; dataset balanceado por género;
