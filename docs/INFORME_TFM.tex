@@ -135,10 +135,12 @@ CNN end-to-end & \textbf{CWT-fair} &
     modulación de la STFT (Nyquist 1.56~Hz) y el de la CWT nativa
     (Nyquist 100~Hz) NO codifican el mismo contenido antes del resize
     a $45\times45$. Al igualarlos (CWT-fair), la brecha con STFT se
-    reduce a la mitad o más en ambos métodos de saliency: con vainilla
-    la CWT pasa de $-0.078$ AUC a $\mathbf{-0.028}$; con Grad-CAM de
-    $+0.087$ a $\mathbf{+0.056}$. Igualar el eje \textbf{mueve la CWT
-    hacia la STFT en las dos direcciones}.
+    reduce sustancialmente en ambos métodos de saliency, aunque en
+    distinta magnitud: con vainilla la CWT pasa de $-0.078$ AUC a
+    $\mathbf{-0.028}$ ($\sim$64\%); con Grad-CAM de $+0.087$ a
+    $\mathbf{+0.056}$ ($\sim$36\%, donde el eje explica solo parte de la
+    brecha). En ambos casos igualar el eje \textbf{mueve la CWT hacia la
+    STFT}.
 
     \item \textbf{Con el eje de modulación igualado, STFT y CWT son
     estadísticamente indistinguibles.} DeLong por seed + Stouffer:
@@ -561,16 +563,6 @@ estadísticamente indistinguibles.}
     \label{fig:svm_vanilla_boxplot}
 \end{figure}
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\textwidth]{figures_informe_final/svm_vanilla_auc_boxplot.png}
-    \caption{Distribución de AUC por sujeto-test (LOSO) para SVM
-    vainilla con STFT y CWT, agregada a través de 3~seeds. La
-    superposición entre ambas distribuciones es coherente con la
-    inferencia $p \approx 0.06$ (NS).}
-    \label{fig:svm_vanilla_boxplot}
-\end{figure}
-
 \subsubsection{Corrección por múltiples comparaciones (BH-FDR)}
 \label{sec:bhfdr}
 
@@ -585,17 +577,19 @@ CWT-fair (las que aíslan la transformada):
 \toprule
 Comparación justa (STFT vs CWT-fair) & $p$ (Stouffer) & BH-FDR $q$ & Sig. \\
 \midrule
-SVM vainilla & $0.318$ & $0.587$ & \texttimes \\
-SVM Grad-CAM & $0.587$ & $0.587$ & \texttimes \\
-CNN & $0.266$ & $0.587$ & \texttimes \\
+SVM vainilla & $0.318$ & $0.679$ & \texttimes \\
+SVM Grad-CAM & $0.587$ & $0.679$ & \texttimes \\
+CNN & $0.679$ & $0.679$ & \texttimes \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+Familia de $m=3$ comparaciones (CNN, SVM Grad-CAM, SVM vainilla).
 \textbf{Ninguna comparación justa se acerca a la significancia}
-($q \geq 0.58$). Incluso la comparación \emph{confundida} STFT vs CWT
-nativa ($p=0.061$ vainilla, $0.068$ Grad-CAM) no sobrevivía BH-FDR
-($q\approx0.10$); las justas están mucho más lejos. \textbf{A igualdad
+($q \approx 0.68$ en las tres). Para contexto, la comparación
+\emph{confundida} STFT vs CWT nativa ($p=0.061$ vainilla, $0.068$
+Grad-CAM) era marginal y tampoco significativa tras corrección; las
+justas quedan mucho más lejos. \textbf{A igualdad
 de eje de modulación, no hay evidencia de superioridad de ninguna
 transformada T-F en este pipeline.}
 
@@ -662,13 +656,14 @@ Grad-CAM vs vainilla (CWT)  & $-0.166 \pm 0.106$ \\
 \end{tabular}
 \end{table}
 
-\textbf{Interpretación}: los saliency maps STFT y CWT son
-\textbf{estadísticamente ortogonales} (Pearson $r \approx -0.09$
-vainilla, $-0.24$ Grad-CAM; ningún $p < 0.05$ para $r \neq 0$). Hablar
-de ``anti-correlación'' sería sobreinterpretar el signo: las
-correlaciones son estadísticamente indistinguibles de cero. Lo mismo
-ocurre entre Grad-CAM y vainilla. Esto demuestra que ``el biomarcador
-descubierto'' depende fuertemente de la elección de pipeline.
+\textbf{Interpretación}: los saliency maps STFT y CWT están
+\textbf{débilmente correlacionados, cerca de cero} (Pearson
+$r \approx -0.09$ vainilla, $-0.24$ Grad-CAM, promedio de 3~seeds). Con
+solo 3~seeds no se puede afirmar \emph{independencia} estadística; lo
+defendible es que no hay una correlación fuerte, y hablar de
+``anti-correlación'' sobreinterpretaría el signo. Lo mismo ocurre entre
+Grad-CAM y vainilla. Esto sugiere que ``el biomarcador descubierto''
+depende de la elección de pipeline.
 
 \subsection{Análisis por banda canónica (post-hoc, solo STFT)}
 
@@ -803,12 +798,14 @@ CWT nativa & $0.778$ & $-0.078$ ($p=0.061$) & $0.800$ & $+0.087$ \\
 \end{tabular}
 \end{table}
 
-\textbf{El patrón es simétrico y contundente}: en vainilla la CWT nativa
-parecía \emph{peor} que STFT y en Grad-CAM parecía \emph{mejor}; en
-\textbf{ambos casos}, igualar el eje \textbf{mueve la CWT hacia la STFT}
-(reduce $|\Delta$ AUC$|$ de 0.078$\to$0.028 y de 0.087$\to$0.056). Las
-diferencias aparentes en las dos direcciones eran mayoritariamente el
-\textbf{artefacto de DSP}, no la transformada. La comparación justa
+\textbf{El patrón es consistente en dirección} (aunque de magnitud
+distinta): en vainilla la CWT nativa parecía \emph{peor} que STFT y en
+Grad-CAM parecía \emph{mejor}; en \textbf{ambos casos}, igualar el eje
+\textbf{mueve la CWT hacia la STFT} (reduce $|\Delta$ AUC$|$ de
+0.078$\to$0.028, $\sim$64\%, y de 0.087$\to$0.056, $\sim$36\%). Las
+diferencias aparentes eran \textbf{en gran parte} el artefacto de DSP,
+no la transformada (con Grad-CAM el eje explica solo $\sim$un tercio, y
+el efecto por seed es de signo mixto). La comparación justa
 (STFT vs CWT-fair) es no significativa en ambos métodos de saliency, y
 también la CWT-nativa vs CWT-fair ($p=0.283, 0.527$).
 
@@ -849,17 +846,19 @@ transformada.
     del eje de modulación (Nyquist $1.56$~Hz vs $100$~Hz).}
 \end{figure}
 
-\subsection{El método de saliency cambia el ranking}
+\subsection{El método de saliency cambia el ranking aparente --- pero también vía el confound}
 
-\textbf{Hallazgo metodológico relevante}: con Grad-CAM, CWT tiende a
-tener mejor AUC media; con vainilla (paper-faithful), STFT tiene mejor
-AUC media. Los saliency maps de los dos métodos no se parecen
-($r \approx 0.11$ STFT, $-0.17$ CWT), lo que indica que descubren
-regiones distintas del espectrograma de modulación.
-
-Esto implica que comparaciones del tipo ``transformada $X$ supera
-transformada $Y$'' son sensibles al método de saliency y al pipeline
-completo.
+\textbf{Hallazgo metodológico}: con la CWT \textbf{nativa}, el ranking se
+invierte según el método de saliency (Grad-CAM: CWT$>$STFT; vainilla:
+STFT$>$CWT). Pero esta sensibilidad \textbf{se atenúa con CWT-fair}: al
+quitar el confound del eje, las dos representaciones convergen bajo
+\emph{ambos} métodos de saliency (§4.1--4.3). Parte de la ``dependencia
+del método de saliency'' era, otra vez, el eje de modulación
+interactuando con cómo cada método pondera las regiones. Los saliency
+maps de STFT y CWT nativa están \textbf{débilmente correlacionados}
+(Pearson $r \approx -0.09$ vainilla, $-0.24$ Grad-CAM, promedio de
+3~seeds) --- descubren regiones distintas, pero eso ya no se traduce en
+diferencia de desempeño una vez igualado el eje.
 
 \begin{figure}[H]
     \centering
@@ -941,7 +940,7 @@ no es evidencia de ausencia}.
     SVM en val set.
     \item \textbf{BH-FDR post-hoc}: la corrección se aplicó después de
     ver los resultados, no como pre-registro. Ninguna comparación justa
-    (STFT vs CWT-fair) se acerca a la significancia ($q \geq 0.58$).
+    (STFT vs CWT-fair) se acerca a la significancia ($q \approx 0.68$, $m=3$).
     \item \textbf{CWT-fair ``iguala hacia abajo'' el eje de modulación}:
     decima la envolvente a 3.125~Hz, descartando modulaciones $>1.56$~Hz
     de la CWT nativa. Es la definición \emph{conservadora} de ``justo''
@@ -1029,17 +1028,19 @@ Más allá de la replicación, este TFM aporta:
         (fair, $p=0.587$).
         \item En \textbf{ambas direcciones} igualar el eje mueve la CWT
         hacia la STFT; ninguna comparación justa sobrevive BH-FDR
-        ($q \geq 0.58$). \textbf{La elección STFT vs CWT-Morlet no cambia
-        el desempeño una vez controlado el eje.}
+        ($q \approx 0.68$, $m=3$). \textbf{No encontramos evidencia de
+        que la transformada cambie el desempeño una vez controlado el eje}
+        (potencia limitada, 3~seeds).
     \end{itemize}
 
     \item \textbf{La sensibilidad del ranking al método de saliency
     también era, en parte, el confound}: con CWT nativa el ranking se
     invierte (Grad-CAM: CWT mejor; vainilla: STFT mejor); esa inversión
     se atenúa con CWT-fair. Los saliency maps STFT$\leftrightarrow$CWT
-    son \textbf{estadísticamente ortogonales} ($r \approx -0.09$
-    vainilla, $-0.24$ Grad-CAM) --- descubren regiones distintas, pero
-    ello no se traduce en diferencia de desempeño con el eje igualado.
+    están \textbf{débilmente correlacionados (cerca de cero)}
+    ($r \approx -0.09$ vainilla, $-0.24$ Grad-CAM) --- descubren regiones
+    distintas, pero ello no se traduce en diferencia de desempeño con el
+    eje igualado.
 
     \item \textbf{Observaciones exploratorias (post-hoc)}:
     STFT~+~vainilla concentra saliency en bandas $\alpha$~(61\%)~+

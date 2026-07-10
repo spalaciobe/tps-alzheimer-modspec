@@ -68,9 +68,9 @@ Sebastián Palacio Betancur · UNAL Medellín · TPS
 **Idea**: la replicación funciona; y aparece una diferencia que cambia de signo.
 
 > "La buena noticia: la **replicación funciona**. La mejor configuración
-> —SVM vainilla con STFT, la fiel al paper— llega a un **AUC de 0.856**, en
-> el rango del paper original, sobre datos públicos. Eso ya justifica el
-> trabajo.
+> —SVM vainilla con STFT, la fiel al paper— llega a una **exactitud de
+> 0.764, en el rango del 0.71 del paper**, sobre datos públicos (y un AUC
+> de 0.856, que el paper no reporta). Eso ya justifica el trabajo.
 >
 > Pero apareció algo curioso: la comparación STFT vs CWT **cambia de signo**
 > según el método de saliencia. Con vainilla, la STFT parece mejor; con
@@ -186,7 +186,7 @@ Sebastián Palacio Betancur · UNAL Medellín · TPS
 
 ## Notas de entrega
 
-- **Ritmo**: ~110–120 palabras/min. El guion tiene ~760 palabras → ~5:00.
+- **Ritmo**: el guion tiene ~760 palabras. A 110–120 palabras/min son ~6:00–6:30; para ceñirte a 5:00 habla a ~150 wpm (ágil) **o** recorta ~150 palabras afinando slides 5–6. Elige una opción y ensaya con cronómetro.
 - **Dónde respirar**: las transiciones en *cursiva* son pausas — úsalas.
 - **Slides que no puedes saltar**: la 5 (el confound + CWT-fair) y la 6 (la
   convergencia). Son el argumento central.

@@ -164,9 +164,10 @@ todo se calcula \textbf{por fold}.
 \small
 \begin{itemize}
     \item Mejor configuración: \textbf{SVM vainilla + STFT}
-    (la \emph{fiel al paper}): AUC $= \mathbf{0.856 \pm 0.022}$,
+    (la \emph{fiel al paper}): \textbf{Acc} $= \mathbf{0.764 \pm 0.009}$,
     en el rango del paper ($\text{Acc}\ 0.71 \pm 0.02$) sobre
-    \textbf{datos públicos}.
+    \textbf{datos públicos}. (AUC $= 0.856 \pm 0.022$; el paper no
+    reporta AUC.)
 \end{itemize}
 
 \vfill
@@ -255,8 +256,8 @@ Grad-CAM & $0.713$ & $0.800$ & $\mathbf{0.769}$ \\
 \end{tabular}
 \end{table}
 \vspace{2pt}
-{\scriptsize Vainilla: brecha $-0.078 \to -0.028$. \quad
-Grad-CAM: $+0.087 \to +0.056$.}
+{\scriptsize Vainilla: brecha $-0.078 \to -0.028$ ($\sim$64\%). \quad
+Grad-CAM: $+0.087 \to +0.056$ ($\sim$36\%).}
 \end{column}
 \begin{column}{0.42\textwidth}
 \begin{block}{Comparación justa (STFT vs CWT-fair)}
@@ -265,7 +266,7 @@ Grad-CAM: $+0.087 \to +0.056$.}
     \item Vainilla: $p = 0.318$
     \item Grad-CAM: $p = 0.587$
 \end{itemize}
-\centering\footnotesize Ninguna sobrevive BH-FDR ($q \geq 0.58$).
+\centering\footnotesize Ninguna sobrevive BH-FDR ($q \approx 0.68$).
 \end{block}
 \end{column}
 \end{columns}
@@ -274,8 +275,10 @@ Grad-CAM: $+0.087 \to +0.056$.}
 \centering
 \textbf{A igualdad de eje de modulación, STFT y CWT-Morlet son
 indistinguibles.} \\
-\small La diferencia aparente (en ambos sentidos) era el \textbf{artefacto
-de DSP}, no la transformada.
+\small La diferencia aparente (en ambos sentidos) era \textbf{en gran
+parte} un artefacto de DSP, no la transformada.
+{\scriptsize\ (CWT-fair iguala ``hacia abajo'': descarta modulaciones
+$>1.56$ Hz; es 1 de 2 definiciones de comparación justa.)}
 
 \end{frame}
 
