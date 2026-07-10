@@ -95,6 +95,15 @@ DeLong pareado dentro de cada seed (n=65) combinado entre seeds. La columna BH-F
 - **Ninguna comparación justa (STFT vs CWT-fair) se acerca a la significancia** (q ≈ 0.68 en las tres, m=3). **A igualdad de eje de modulación, STFT y CWT-Morlet son estadísticamente indistinguibles**: las diferencias aparentes eran en gran parte el artefacto de DSP.
 - **Caveat**: CWT-fair "iguala hacia abajo" (descarta modulaciones >1.56 Hz). Fisiológicamente razonable (AM diagnóstica lenta en EA), pero la definición alternativa "hacia arriba" (STFT con hop fino) queda como trabajo futuro. Ver `docs/INFORME_TFM.md §5.1, §5.5`.
 
+## Análisis post-hoc de bajo coste (sin re-entrenar) — `results/fusion_tost_analysis.json`
+
+- **Late-fusion STFT+CWT-fair** (promedio de scores, vainilla): AUC **0.867 ± 0.014** vs STFT 0.856 ± 0.022 y CWT-fair 0.828 ± 0.031. Mejora leve + menor varianza, pero **inconsistente** (por seed +0.033/+0.008/−0.007) y no se sostiene en el ensemble mediana (STFT 0.900 vs fusión 0.887) → indicio de complementariedad parcial, no concluyente.
+- **TOST de equivalencia** (δ=±0.05) sobre ΔAUC STFT−CWT-fair: TOST seed-level p=0.246; bootstrap ensemble ΔAUC=+0.051, IC90 [−0.000, +0.107] (no cabe en ±0.05; δ mínimo ≈0.11). **La conclusión correcta es "no se detecta diferencia", NO "equivalencia demostrada"** (poca potencia con 3 seeds).
+
+## Posicionamiento vs estado del arte
+
+Evaluación adversarial multi-agente con búsqueda web en `docs/EVALUACION_SOTA.md`. Resumen: bajo LOSO honesto en ds004504 la literatura reporta ~71–83% acc; este trabajo (0.764/0.856) está por encima de la media LOSO y ~7 pts bajo el mejor comparable (DICE-net 83.28% LOSO), lejos de foundation models (LEAD ~91% F1). El valor del trabajo es la replicación leakage-free + el aporte metodológico (CWT-fair), no la accuracy. La novedad del control CWT-fair frente al linaje Falk/Cassani/Fraga se detalla en `docs/INFORME_TFM.md §5.7`.
+
 ---
 
 ## Comparación con el paper original

@@ -143,14 +143,18 @@ CNN end-to-end & \textbf{CWT-fair} &
     brecha). En ambos casos igualar el eje \textbf{mueve la CWT hacia la
     STFT}.
 
-    \item \textbf{Con el eje de modulación igualado, STFT y CWT son
-    estadísticamente indistinguibles.} DeLong por seed + Stouffer:
+    \item \textbf{Con el eje de modulación igualado, no se detecta
+    diferencia entre STFT y CWT.} DeLong por seed + Stouffer:
     STFT vs CWT-fair $p = 0.318$ (vainilla), $0.587$ (Grad-CAM); CWT
-    nativa vs CWT-fair $p = 0.283$, $0.527$. Ninguna comparación es
-    significativa. \textbf{No encontramos evidencia de que la elección
-    STFT vs CWT-Morlet cambie el desempeño una vez controlado el eje}
-    (potencia limitada, 3~seeds); ni la hipótesis original (CWT > STFT)
-    ni la inversa obtienen evidencia.
+    nativa vs CWT-fair $p = 0.283$, $0.527$; ninguna significativa
+    (BH-FDR $q\approx0.68$). \textbf{No encontramos evidencia de que la
+    elección STFT vs CWT-Morlet cambie el desempeño una vez controlado el
+    eje} (potencia limitada, 3~seeds). Matiz de rigor: es \emph{ausencia
+    de diferencia detectable}, \textbf{no equivalencia probada} —un TOST
+    ($\delta=\pm0.05$) no la declara (§4.9). Un \emph{late-fusion}
+    STFT+CWT-fair sugiere complementariedad parcial (AUC 0.867, indicio
+    no concluyente, §4.9). El aporte metodológico se posiciona vs el
+    linaje Falk/Cassani/Fraga en §5.7.
 
     \item \textbf{El método de saliency afecta el ranking aparente entre
     STFT y CWT nativa} (Grad-CAM: CWT mejor; vainilla: STFT mejor), pero
@@ -554,12 +558,32 @@ CWT nativa vs CWT-fair (efecto eje) & $-0.049, -0.069, -0.032$ & $\mathbf{0.283}
 de modulación} (STFT vs CWT-fair). Ese $p \approx 0.06$ estaba impulsado
 por el artefacto de DSP, no por la transformada. La CWT-fair recupera la
 brecha ($0.778 \to 0.828$ AUC, $-0.078 \to -0.028$ vs STFT).
-\textbf{A igualdad de eje de modulación, STFT y CWT-Morlet son
-estadísticamente indistinguibles.}
+\textbf{A igualdad de eje de modulación, no se detecta diferencia entre
+STFT y CWT-Morlet} (ver el matiz de equivalencia en §4.9 y §5.1).
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{figures_informe_final/svm_vanilla_auc_boxplot.png}
+    \includegraphics[width=0.92\textwidth]{figures_informe_final/fair_auc_grouped.png}
+    \caption{AUC (media $\pm$ SD, 3~seeds) por pipeline y transformada.
+    Al igualar el eje de modulación, \textbf{CWT-fair (verde) se desplaza
+    hacia STFT (azul)} en los tres pipelines; la que se desvía es la CWT
+    nativa (naranja): por debajo en vainilla/CNN, por encima en Grad-CAM.}
+    \label{fig:fair_grouped}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures_informe_final/fair_forest_delong.png}
+    \caption{Forest plot de $\Delta$AUC (STFT $-$ CWT). Las comparaciones
+    \emph{confundidas} (rombos naranjas) están lejos de 0 ($\pm0.08$); las
+    \emph{justas} STFT vs CWT-fair (verdes; puntos = por seed, rombo =
+    media) se centran sobre 0. Todas las justas son NS (BH-FDR $q\approx0.68$).}
+    \label{fig:fair_forest}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures_informe_final/svm_vanilla_auc_boxplot.png}
     \caption{Distribución de AUC por sujeto-test (LOSO) para SVM
     vainilla, agregada a través de 3~seeds.}
     \label{fig:svm_vanilla_boxplot}
@@ -754,6 +778,51 @@ CWT vainilla  & $0.026$--$0.030$ \\
 folds} (Jaccard $\approx 0.03$--$0.06$). Esto matiza la narrativa de
 ``biomarcadores reproducibles'': cada fold descubre regiones distintas,
 aunque las métricas globales sean buenas.
+
+\subsection{Análisis post-hoc de bajo coste: late-fusion y equivalencia (TOST)}
+\label{sec:fusion_tost}
+
+Ambos análisis reutilizan los scores por sujeto ya guardados (sin re-entrenar).
+
+\textbf{Late-fusion STFT + CWT-fair} (promedio de scores por sujeto, SVM vainilla):
+
+\begin{center}
+\small
+\begin{tabular}{lc}
+\toprule
+Representación & AUC (media $\pm$ SD, 3~seeds) \\
+\midrule
+STFT & $0.856 \pm 0.022$ \\
+CWT-fair & $0.828 \pm 0.031$ \\
+\textbf{Late-fusion STFT+CWT-fair} & $\mathbf{0.867 \pm 0.014}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La fusión da una \textbf{mejora leve} sobre STFT ($+0.011$ AUC) y
+\textbf{menor varianza entre seeds} ($\pm0.014$ vs $\pm0.022$), coherente
+con la baja correlación de los saliency maps. Pero la ganancia es
+\textbf{pequeña e inconsistente} (por seed: $+0.033, +0.008, -0.007$) y
+\textbf{no se sostiene en el ensemble mediana} (STFT 0.900 vs fusión
+0.887): es un \textbf{indicio de complementariedad parcial, no un
+resultado concluyente}.
+
+\textbf{Test de equivalencia (TOST)} sobre $\Delta$AUC $=$ STFT $-$
+CWT-fair (SVM vainilla), margen $\delta = \pm0.05$:
+\begin{itemize}[leftmargin=*]
+    \item $\Delta$AUC por seed: $-0.021, +0.036, +0.069$ (media
+    $+0.028 \pm 0.046$); TOST seed-level $p = 0.246$ $\to$ no se declara
+    equivalencia.
+    \item Bootstrap por sujeto (ensemble): $\Delta$AUC $= +0.051$, IC90
+    $[-0.000, +0.107]$: el IC90 no cabe en $\pm0.05$; el $\delta$ mínimo
+    para declarar equivalencia sería $\approx0.11$ AUC.
+\end{itemize}
+
+\textbf{Matiz de rigor}: la conclusión correcta es \emph{``no se detecta
+diferencia''} (DeLong $p=0.318$), \textbf{no ``equivalencia demostrada''}.
+Con 3~seeds y $n=65$ el estudio no tiene potencia para probar equivalencia
+dentro de un margen estrecho ($\pm0.05$); haría falta $\delta\approx0.11$
+o, mejor, $\geq10$ seeds y un TOST pre-registrado.
 
 \subsection{Figura maestra}
 
@@ -1006,6 +1075,73 @@ Más allá de la replicación, este TFM aporta:
     \texttt{requirements-lock.txt}, seeds fijas, configs YAML, tests
     unitarios pasando.
 \end{enumerate}
+
+\subsection{Trabajo relacionado y posicionamiento de la contribución}
+\label{sec:related}
+
+\textbf{El eje de modulación en el linaje Falk / Cassani / Fraga.} En la
+formulación canónica del espectro de modulación de EEG (Fraga 2012;
+Cassani 2013; Cassani \& Falk 2020) el front-end tiempo-frecuencia
+\textbf{no es una STFT ni una CWT, sino un banco de filtros} que
+descompone la señal en las subbandas convencionales ($\delta,\theta,
+\alpha,\beta,\gamma$), y la envolvente de amplitud se obtiene por
+\textbf{transformada de Hilbert} (que conserva la tasa de muestreo
+original). Sobre esa envolvente se calcula la FFT temporal y el eje de
+modulación queda \textbf{fijado por diseño} mediante un segundo banco de
+filtros de modulación (bandas m-$\delta$ \ldots m-$\gamma$, acotadas por
+el teorema de Bedrosian). Es decir: en toda la saga el eje de modulación
+lo determina \textbf{un único front-end aplicado idénticamente a todos
+los sujetos}; nunca es una variable libre, y por eso el confound
+\textbf{no puede aparecer}.
+
+\textbf{Dónde se abre la puerta al confound.} Lopes et al. (2023) --- el
+trabajo replicado --- generaliza la receta a
+$M(f, f_{\text{mod}}) = \mathcal{F}_t\{|X(t,f)|^2\}$ y afirma que el
+mapeo T-F ``puede ser una STFT o una wavelet'', pero \textbf{no compara
+ambas, no especifica ventana/hop/overlap, y no menciona el Nyquist de
+modulación ni el rango del eje de modulación}. Trata STFT y wavelet como
+intercambiables sin advertir que cambian la tasa de muestreo de la
+envolvente y, con ella, el eje de modulación. El confound \textbf{se
+materializa precisamente al instanciar esa receta con front-ends
+distintos} --- exactamente lo que ocurre al replicar y extender el
+trabajo con CWT.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{2.1cm}p{8.5cm}p{2.6cm}}
+\toprule
+Nivel & Afirmación & Estatus \\
+\midrule
+Conocido & El eje de modulación es una dimensión con su propio ancho de banda y bandas definidas & Fraga 2012; Cassani 2013/2020 \\
+Conocido & Al comparar representaciones T-F hay que igualar confounds; STFT/wavelet convergen con datos suficientes & Huzaifah 2017; Choi 2017 \\
+Latente & Cambiar el front-end (STFT$\leftrightarrow$wavelet) altera la tasa de envolvente $\to$ Nyquist y span del eje de modulación & Implícito en Lopes 2023 \\
+\textbf{Nuevo} & Diagnóstico explícito del confound del eje de modulación al comparar STFT vs CWT para el modspec & Aporte propio \\
+\textbf{Nuevo} & Control operacional \textbf{CWT-fair} que iguala el eje decimando la envolvente & Aporte propio \\
+\textbf{Nuevo} & Evidencia de que, con el eje igualado, STFT $\approx$ CWT (sin diferencia detectable) & Aporte propio \\
+\bottomrule
+\end{tabular}
+\caption{Qué es conocido, latente y nuevo en la contribución.}
+\end{table}
+
+\textbf{Claim de novedad (calibrado).} El aporte \textbf{no} es una
+transformada nueva ni un método nuevo de modspec: es un \textbf{diagnóstico
+metodológico + un control experimental + un resultado nulo informativo}.
+Su valor es de \emph{rigor comparativo} --- evitar atribuir a la
+transformada un efecto que en realidad es del muestreo --- trasladando el
+principio de ``comparación justa de representaciones'', ya conocido en
+audio para el eje portador, al \textbf{segundo eje (el de modulación)},
+donde no se había planteado para el espectro de modulación de EEG.
+
+\textbf{Posicionamiento vs SOTA de desempeño.} En ds004504 bajo
+validación honesta sujeto-independiente (LOSO), la literatura reciente
+reporta $\sim$71--83\% de accuracy; este trabajo (Acc 0.764 / AUC 0.856)
+queda por encima de la media LOSO y $\sim$7 puntos por debajo del mejor
+comparable (DICE-net, conv-transformer, 83.28\% LOSO; Miltiadous et al.
+2023), y lejos de los \emph{foundation models} de EEG (p.ej. LEAD
+$\sim$91\% F1). El nicho de este trabajo no es la carrera de accuracy sino
+la replicación \emph{leakage-free} y el aporte metodológico de DSP
+(evaluación completa en \texttt{docs/EVALUACION\_SOTA.md}).
 
 % =============================================================
 \section{Conclusiones}
