@@ -90,7 +90,7 @@ Sebastián Palacio Betancur · UNAL Medellín · TPS
 > "Resulta que **no estaba comparando peras con peras**. Las dos imágenes
 > son 45 por 45 y se ven equivalentes, pero su **eje vertical —la frecuencia
 > de modulación— no mide lo mismo**. Por cómo funciona cada transformada, la
-> STFT llega hasta 1.5 Hz de modulación con unos 13 valores reales; la CWT
+> STFT llega hasta 1.56 Hz de modulación con unos 13 valores reales; la CWT
 > llega hasta 100 Hz con unos 180. Ambas se estiran o encogen a 45 píxeles,
 > pero el contenido físico es distinto.
 >
@@ -124,9 +124,9 @@ Sebastián Palacio Betancur · UNAL Medellín · TPS
 > múltiples.
 >
 > O sea: **a igualdad de eje de modulación, la STFT y la CWT-Morlet son
-> indistinguibles**. La diferencia que veía —en ambos sentidos— era un
-> **artefacto de procesamiento de señales**, no la transformada. Ese fue el
-> hallazgo central."
+> indistinguibles**. La diferencia que veía —en ambos sentidos— era **en
+> gran parte un artefacto de procesamiento de señales**, no la transformada.
+> Ese fue el hallazgo central."
 
 *Transición*: "Para cerrar."
 

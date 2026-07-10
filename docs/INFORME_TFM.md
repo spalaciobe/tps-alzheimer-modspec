@@ -3,7 +3,7 @@
 **Autor**: Sebastián Palacio Betancur
 **Programa**: Maestría · Universidad Nacional de Colombia — Sede Medellín · Facultad de Minas
 **Curso**: Tópicos en Procesamiento Digital de Señales · Profesor: Freddy Bolaños
-**Fecha**: junio 2026
+**Fecha**: julio 2026
 **Repositorio**: https://github.com/spalaciobe/tps-alzheimer-modspec
 
 ---
@@ -30,7 +30,7 @@ Para separar el efecto de la **transformada** del de un **artefacto de DSP** en 
 
 **Conclusiones clave (con matices estadísticos explícitos):**
 
-1. **La replicación independiente del pipeline funciona**: SVM con saliency vainilla y STFT alcanza Acc 0.764 ± 0.009, AUC 0.856 ± 0.022, en el rango del 0.71 ± 0.02 reportado por Lopes (T2: N vs AD). La comparación es orientativa (datasets y poblaciones distintas), no equivalencia estricta.
+1. **La replicación independiente del pipeline funciona**: SVM con saliency vainilla y STFT alcanza **Acc 0.764 ± 0.009** (comparable con el Acc 0.71 ± 0.02 de Lopes en T2: N vs AD; el paper no reporta AUC), con **AUC 0.856 ± 0.022**. La comparación es orientativa (datasets y poblaciones distintas), no equivalencia estricta.
 
 2. **Las diferencias aparentes STFT vs CWT eran en gran parte un artefacto de DSP, no de la transformada.** El eje de modulación de la STFT (Nyquist 1.56 Hz) y el de la CWT nativa (Nyquist 100 Hz) NO codifican el mismo contenido antes del resize a 45×45. Al igualarlos (CWT-fair), la brecha con STFT **se reduce sustancialmente en ambos métodos de saliency, aunque en distinta magnitud**: con vainilla la CWT pasa de −0.078 AUC a **−0.028** (una reducción del ~64%; cwt_fair 0.828 vs stft 0.856); con Grad-CAM pasa de +0.087 a **+0.056** (~36%, donde el eje explica solo parte de la brecha). En ambos casos corregir el eje **mueve la CWT hacia la STFT**.
 

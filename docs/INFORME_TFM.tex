@@ -126,9 +126,10 @@ CNN end-to-end & \textbf{CWT-fair} &
 \begin{enumerate}[leftmargin=*]
     \item \textbf{La replicación independiente del pipeline funciona}:
     SVM con saliency vainilla y STFT alcanza
-    Acc $0.764 \pm 0.009$, AUC $0.856 \pm 0.022$, en el rango del
-    $0.71 \pm 0.02$ reportado por Lopes (T2: N vs AD).
-    La comparación es orientativa, no equivalencia estricta.
+    \textbf{Acc $0.764 \pm 0.009$} (comparable con el Acc $0.71 \pm 0.02$
+    de Lopes en T2: N vs AD; el paper no reporta AUC), con
+    \textbf{AUC $0.856 \pm 0.022$}. La comparación es orientativa, no
+    equivalencia estricta.
 
     \item \textbf{Las diferencias aparentes STFT vs CWT eran en gran
     parte un artefacto de DSP, no de la transformada.} El eje de
@@ -1013,9 +1014,9 @@ Más allá de la replicación, este TFM aporta:
 \begin{enumerate}[leftmargin=*]
     \item \textbf{El pipeline de Lopes et al.~2023 fue replicado
     funcionalmente} sobre el dataset público \texttt{ds004504}. SVM con
-    saliency vainilla y STFT alcanza Acc $= 0.764 \pm 0.009$,
-    AUC $= 0.856 \pm 0.022$ (3~seeds), en el orden de magnitud del
-    $0.71 \pm 0.02$ reportado por Lopes en T2.
+    saliency vainilla y STFT alcanza Acc $= 0.764 \pm 0.009$
+    (comparable con el Acc $0.71 \pm 0.02$ de Lopes en T2; el paper no
+    reporta AUC), con AUC $= 0.856 \pm 0.022$ (3~seeds).
 
     \item \textbf{A igualdad de eje de modulación, STFT y CWT-Morlet son
     estadísticamente indistinguibles; las diferencias aparentes eran un

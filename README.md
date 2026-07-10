@@ -97,7 +97,7 @@ python scripts/12_channel_importance.py
 
 Ver [`docs/plan.md`](docs/plan.md).
 
-## Resultados finales (full multi-seed, 3 seeds, 2026-06)
+## Resultados finales (full multi-seed, 3 seeds, 2026-07)
 
 Ver [`results/RESULTS_full.md`](results/RESULTS_full.md) y [`docs/INFORME_TFM.md`](docs/INFORME_TFM.md).
 
