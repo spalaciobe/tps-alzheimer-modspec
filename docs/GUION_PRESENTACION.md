@@ -8,9 +8,13 @@ Sebastián Palacio Betancur · UNAL Medellín · TPS
 > arco narrativo es: *quise comparar STFT vs CWT → apareció una diferencia
 > confusa → descubrí que no comparaba peras con peras (el eje de modulación)
 > → lo controlé → las transformadas empatan; la diferencia era un artefacto
-> de DSP.* Total: ~5:00 sin los *zooms*, o **~7:00** con los tres *zooms* de
-> DSP (slides 3a–3c), pensados para un público de señales; se pueden comprimir
-> o saltar si el tiempo aprieta. El corazón son las **slides 5 y 6**.
+> de DSP.* Dos versiones según tu tiempo:
+> **(1) Núcleo narrativo** (slides 1–3, 4–7, sin los zooms 3a–3c ni los
+> ejemplos 3d–3e): ~5:00 a ritmo ágil, ~8:00 pausado.
+> **(2) Versión completa** (con los 3 *zooms* de DSP y los 2 ejemplos de
+> gráficas): **~11–13 min a ritmo pausado**, ideal para un público de
+> señales o una defensa de ~15 min. El corazón sigue siendo las **slides 5
+> y 6**; los zooms/ejemplos son profundidad que puedes comprimir o saltar.
 
 ---
 
@@ -36,10 +40,17 @@ Sebastián Palacio Betancur · UNAL Medellín · TPS
 > cada banda. Y todo eso depende del primer paso —cómo hago la
 > descomposición tiempo-frecuencia—, ese bloque naranja del diagrama.
 >
+> El trabajo que replico —**Lopes y colegas, 2023**— hace algo ingenioso
+> con esa representación: en vez de entrenar un clasificador directo, usan
+> una **red convolucional para *descubrir*** qué zonas del espectro
+> distinguen a los pacientes, mediante mapas de saliencia; y luego un
+> **SVM** clasifica usando solo esas zonas. Reportan alrededor de un **71%
+> de acierto**.
+>
 > Mi **hipótesis** era que la **CWT**, la transformada wavelet, con mejor
 > resolución en bajas frecuencias, debería ganarle a la STFT. El plan:
-> replicar el pipeline de Lopes 2023 sobre **datos públicos** y ver si la
-> CWT de verdad gana."
+> replicar ese pipeline sobre **datos públicos** y ver si la CWT de verdad
+> gana."
 
 *Transición*: "Primero, lo que construí."
 
@@ -106,7 +117,42 @@ acercamiento a las tres decisiones de DSP clave."
 > dos a 45×45 **oculta que su eje vertical no mide lo mismo**. Justo eso es
 > lo que voy a destapar en un momento."
 
-*Transición*: "Con eso montado, ¿qué salió?"
+*Transición*: "¿Y qué imagen sale de todo esto?"
+
+---
+
+## Slide 3d — Ejemplo real: el espectro de modulación · (~45 s)
+
+**Idea**: mostrar la gráfica real que se obtiene y señalar el biomarcador.
+
+> "Y esto es lo que sale: un **ejemplo real** del espectro de modulación.
+> En el eje vertical, la frecuencia de la señal, con las bandas clásicas
+> —delta, theta, alfa, beta—; en el horizontal, la frecuencia de
+> **modulación**, o sea *a qué ritmo* cambia la energía. Cada sujeto produce
+> una imagen así.
+>
+> Lo interesante es el panel de la derecha: la **diferencia entre pacientes
+> y sanos**. En Alzheimer sube la actividad **lenta** —el delta, en rojo— y
+> baja el alfa —en azul—. Eso, en una sola imagen, es el biomarcador que el
+> modelo va a aprender a separar."
+
+*Transición*: "¿Y cómo lo aprende?"
+
+---
+
+## Slide 3e — Ejemplo real: mapas de saliencia · (~40 s)
+
+**Idea**: el truco de Lopes en imágenes; y sembrar que STFT y CWT difieren.
+
+> "Aquí está el **truco de Lopes en imágenes**. La red no da un diagnóstico:
+> genera un **mapa de saliencia** que resalta las regiones del espectro que
+> separan enfermos de sanos —las zonas más claras—. Y un SVM final clasifica
+> usando solo esas regiones.
+>
+> Fíjense en un detalle: la **STFT y la CWT resaltan patrones distintos**.
+> Esa pista es justo la que me llevó al giro que viene."
+
+*Transición*: "Con eso montado, ¿qué salió en números?"
 
 ---
 
@@ -233,8 +279,9 @@ acercamiento a las tres decisiones de DSP clave."
 
 ## Notas de entrega
 
-- **Ritmo**: el guion base (sin zooms) tiene ~760 palabras. A 110–120 palabras/min son ~6:00–6:30; para ceñirte a 5:00 habla a ~150 wpm (ágil) **o** recorta ~150 palabras afinando slides 5–6. Elige una opción y ensaya con cronómetro.
-- **Zooms de DSP (3a–3c)**: suman ~2:00. Son para el público de señales de la materia. Si el tiempo aprieta, compríme a un solo *zoom* de ~40 s ("filtro FIR de fase lineal, 200 Hz por aliasing, 8 s por resolución de modulación") o sáltalos; el arco no depende de ellos.
+- **Ritmo y duración**: el discurso completo son ~1290 palabras. A ritmo **pausado** (~110 wpm) son ~11:45 de lectura pura, o **~13:30 en vivo** (con pausas al cambiar de slide, señalar figuras y respirar). El núcleo narrativo (sin 3a–3e) son ~830 palabras: ~7:30 pausado, ~5:00 ágil. Ensaya con cronómetro y decide qué versión usas.
+- **Zooms de DSP (3a–3c)**: suman ~1:55. Son para el público de señales de la materia. Si el tiempo aprieta, compríme a un solo *zoom* de ~40 s ("filtro FIR de fase lineal, 200 Hz por aliasing, 8 s por resolución de modulación") o sáltalos; el arco no depende de ellos.
+- **Ejemplos de gráficas (3d–3e)**: suman ~1:25. La 3d (espectro de modulación) es la más valiosa para un curso de señales —muestra la entrada real y el biomarcador—; consérvala si puedes. La 3e (saliencia) es opcional: si vas justo, resúmela en una frase ("la CNN resalta las regiones que separan AD de sanos y el SVM las usa") apoyándote en el diagrama de la slide 3.
 - **Dónde respirar**: las transiciones en *cursiva* son pausas — úsalas.
 - **Slides que no puedes saltar**: la 5 (el confound + CWT-fair) y la 6 (la
   convergencia). Son el argumento central.

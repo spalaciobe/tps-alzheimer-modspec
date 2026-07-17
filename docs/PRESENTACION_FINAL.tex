@@ -47,34 +47,33 @@
 \begin{frame}{La pregunta}
 
 \begin{columns}[T]
-\begin{column}{0.56\textwidth}
+\begin{column}{0.57\textwidth}
+\small
 \begin{itemize}
-    \item El Alzheimer es la demencia \#1 ($>$55 M personas). Detectarlo
-    temprano es clave, pero MRI/PET son caros.
-    \item El \textbf{EEG} es barato y portátil. Su
-    \textbf{espectrograma de modulación} captura \emph{a qué ritmo}
-    cambia la energía en cada banda --- un biomarcador prometedor.
+    \item El Alzheimer es la demencia \#1; detectarlo temprano importa,
+    pero MRI/PET son caros.
+    \item El \textbf{EEG} es barato y portátil; su \textbf{espectro de
+    modulación} captura \emph{a qué ritmo} cambia la energía de cada banda.
     \item Todo depende del primer paso: la \textbf{descomposición
     tiempo-frecuencia}.
 \end{itemize}
 
-\vfill
 \begin{block}{Hipótesis}
-\small La \textbf{CWT}, con mejor resolución en bajas frecuencias,
+\footnotesize La \textbf{CWT}, con mejor resolución en bajas frecuencias,
 debería superar a la \textbf{STFT} para el Alzheimer.
 \end{block}
 \end{column}
 \begin{column}{0.40\textwidth}
 \centering
 \begin{tikzpicture}[
-    box/.style={draw, rounded corners, fill=blue!10, minimum width=2.8cm,
-                minimum height=0.75cm, align=center, font=\small},
+    box/.style={draw, rounded corners, fill=blue!10, minimum width=2.6cm,
+                minimum height=0.68cm, align=center, font=\small},
     arr/.style={-{Stealth[length=2.5mm]}, thick}
 ]
 \node[box] (eeg) {Señal EEG\\$x[n]$};
-\node[box, below=0.45cm of eeg, fill=orange!15] (tf) {\textbf{STFT \emph{o} CWT}};
-\node[box, below=0.45cm of tf] (pow) {Potencia $|X(t,f)|^2$};
-\node[box, below=0.45cm of pow] (mod) {Espectrograma\\de modulación};
+\node[box, below=0.38cm of eeg, fill=orange!15] (tf) {\textbf{STFT \emph{o} CWT}};
+\node[box, below=0.38cm of tf] (pow) {Potencia $|X(t,f)|^2$};
+\node[box, below=0.38cm of pow] (mod) {Espectro\\de modulación};
 \draw[arr] (eeg) -- (tf);
 \draw[arr] (tf) -- (pow);
 \draw[arr] (pow) -- node[right, font=\scriptsize]{$\mathcal{F}_t$} (mod);
@@ -82,11 +81,14 @@ debería superar a la \textbf{STFT} para el Alzheimer.
 \end{column}
 \end{columns}
 
-\vfill
-\centering\small
-\textbf{Plan}: replicar el pipeline de Lopes 2023 sobre datos
-\textbf{públicos} (OpenNeuro \texttt{ds004504}) y responder si la CWT
-gana.
+\vspace{2pt}
+\begin{block}{El artículo que replico --- Lopes et al.\ (2023)}
+\scriptsize Detectan Alzheimer desde EEG con una idea elegante: una
+\textbf{CNN} \emph{descubre} --- vía saliencia --- \textbf{qué regiones}
+del espectro separan pacientes de sanos, y un \textbf{SVM} clasifica con
+ellas (Acc $\approx 0.71$). \textbf{Mi plan}: replicarlo sobre datos
+\textbf{públicos} (\texttt{ds004504}) y comparar \textbf{STFT vs CWT}.
+\end{block}
 
 \end{frame}
 
@@ -255,6 +257,59 @@ larga} = se rompe la cuasi-estacionariedad del EEG. 8 s es el punto medio
 \scriptsize Forzar ambos a 45$\times$45 \textbf{oculta} que el eje de
 modulación no mide lo mismo en STFT y CWT: ese es el \emph{confound} que
 controlo con CWT-fair.
+\end{alertblock}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% ============================================================
+% SLIDE 3d: Ejemplo real — espectro de modulación
+% ============================================================
+\begin{frame}{Ejemplo real: el espectro de modulación (la entrada de la CNN)}
+
+\centering
+\includegraphics[width=0.97\linewidth]{figures_informe_final/modspec_means_stft.png}\\[4pt]
+
+\begin{columns}[T]
+\begin{column}{0.60\textwidth}
+\scriptsize
+\textbf{Ejes}: vertical = frecuencia \emph{portadora} (bandas
+$\delta,\theta,\alpha,\beta$); horizontal = frecuencia de
+\emph{modulación} (a qué ritmo cambia la energía de cada banda). Cada
+sujeto $\to$ una imagen así (aquí promediada por grupo).
+\end{column}
+\begin{column}{0.38\textwidth}
+\scriptsize
+\textbf{El biomarcador} (panel derecho, AD$-$HC): en Alzheimer \textbf{sube}
+la actividad \textbf{lenta} ($\delta$, rojo) y \textbf{baja} la de $\alpha$
+(azul). Eso es lo que el modelo aprende a separar.
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% ============================================================
+% SLIDE 3e: Ejemplo real — mapas de saliencia
+% ============================================================
+\begin{frame}{Ejemplo real: dónde ``mira'' la CNN (mapas de saliencia)}
+
+\begin{columns}[c]
+\begin{column}{0.56\textwidth}
+\centering
+\includegraphics[width=0.98\linewidth]{figures_informe_final/saliency_compare.png}\\[2pt]
+{\scriptsize Saliencia media (Grad-CAM) --- arriba --- y su diferencia
+AD$-$HC --- abajo ---, para STFT y CWT.}
+\end{column}
+\begin{column}{0.42\textwidth}
+\small
+La CNN \textbf{no clasifica}: resalta las regiones del espectro que separan
+AD de HC (zonas claras); el \textbf{SVM} final las usa como \emph{features}.
+
+\vfill
+\begin{alertblock}{Pista del giro}
+\footnotesize STFT y CWT resaltan patrones \textbf{distintos} --- y eso ya
+anticipa que no las estamos comparando en igualdad de condiciones.
 \end{alertblock}
 \end{column}
 \end{columns}
