@@ -462,7 +462,7 @@ Lo defendible es que **el pipeline replicado funciona y produce métricas compat
 
 14. **Atribución de bandas canónicas para CWT sesgada**: el eje portador de la CWT es log-espaciado (`geomspace`), pero el análisis de bandas en `scripts/10_post_experiments.py` asumía un eje lineal. Esto sesga la tabla 4.6 para las filas de CWT; la atribución para STFT (eje lineal nativo) es aproximadamente válida. **El análisis por bandas debe interpretarse solo para STFT** (corregido en el script y la tabla; ver §4.6).
 
-15. **N efectivo por autocorrelación de epochs**: el overlap 87.5% entre epochs intra-sujeto NO afecta los tests reportados porque todas las inferencias finales son a nivel de sujeto (n=65 scores agregados por sujeto). La función `effective_n()` existe en `src/stats.py` pero no se necesita en este pipeline. *Aclaración añadida en respuesta a revisión externa.*
+15. **N efectivo por autocorrelación de epochs**: el overlap 87.5% entre epochs intra-sujeto NO afecta los tests reportados porque todas las inferencias finales son a nivel de sujeto (n=65 scores agregados por sujeto). La función `effective_n()` existe en `src/stats.py` pero no se necesita en este pipeline.
 
 16. **Análisis post-hoc** (bandas canónicas, importancia por canal, correlaciones, género) no estaban pre-registrados; deben verse como exploratorios.
 
@@ -474,8 +474,7 @@ Más allá de la replicación, este TFM aporta:
 2. **Comparación STFT vs CWT controlando el confound DSP del eje de modulación** — el aporte metodológico central. Se identifica que STFT y CWT nativa tienen ejes de modulación no equiparables, se introduce la condición **CWT-fair** que los iguala, y se demuestra que las diferencias aparentes (en ambas direcciones y ambos métodos de saliency) eran mayoritariamente ese artefacto: a igualdad de eje, las transformadas son indistinguibles (DeLong + Stouffer + BH-FDR). Esto es un patrón replicable de "comparación justa de representaciones T-F" útil para la comunidad.
 3. **Observación de pipeline-dependencia y su origen**: el método de saliency cambia el ranking aparente entre STFT y CWT nativa, pero la sensibilidad se atenúa al controlar el eje — mostrando que el confound interactuaba con el método de saliency.
 4. **Conexión exploratoria con literatura clínica**: STFT + vainilla concentra saliency en bandas alpha-theta y canales occipito-temporales, coherente con biomarcadores conocidos de EA (Fraga 2013, Cassani 2020).
-5. **Auditoría DSP + ML interna documentada** en `docs/AUDIT.md` y validada por dos rondas de revisión externa + revisión adversarial multi-agente del código del fix.
-6. **Reproducibilidad total**: repo público con `requirements-lock.txt`, seeds fijas, configs YAML, tests unitarios pasando, y notebook ejecutable.
+5. **Reproducibilidad total**: repo público con `requirements-lock.txt`, seeds fijas, configs YAML, tests unitarios pasando, y notebook ejecutable.
 
 ### 5.7 Trabajo relacionado y posicionamiento de la contribución
 
@@ -560,7 +559,7 @@ Tiempos en RTX 3050 Laptop (4 GB):
 
 ## 8. Declaración de uso de IA
 
-La estructura del pipeline, scripts de orquestación, debugging de leakage en LOSO-CV, refactor de optimización (`SubjectBank`, fp16-bank, GC entre folds), auditoría metodológica multi-dimensional y redacción de este informe fueron asistidos por **Claude Code (Anthropic)** [Opus 4.7, 2026]. Todo el código fue revisado, ejecutado y validado por el autor antes de cada commit.
+La estructura del pipeline, scripts de orquestación, debugging de leakage en LOSO-CV, refactor de optimización (`SubjectBank`, fp16-bank, GC entre folds), revisión metodológica y redacción de este informe fueron asistidos por **Claude Code (Anthropic)** [Opus 4.7, 2026]. Todo el código fue revisado, ejecutado y validado por el autor antes de cada commit.
 
 ## 9. Bibliografía
 
@@ -588,7 +587,7 @@ Figura principal sugerida para presentación: `results/figures_multiseed/auc_mas
 ### B. Documentos asociados
 
 - `docs/plan.md`: plan original del proyecto.
-- `docs/AUDIT.md`: auditoría consolidada (fidelidad, código, DSP, ML, ética, publicación).
+- `docs/AUDIT.md`: notas internas de revisión metodológica (fidelidad, código, DSP, ML, ética, publicación).
 - `docs/LEARNING_PATH.md`: roadmap pedagógico (señales + código) para entender el proyecto desde nivel básico.
 - `docs/optimization_options.md`: opciones para escalar a cloud.
 - `results/RESULTS_full.md`: tabla detallada de resultados.

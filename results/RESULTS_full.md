@@ -102,7 +102,7 @@ DeLong pareado dentro de cada seed (n=65) combinado entre seeds. La columna BH-F
 
 ## Posicionamiento vs estado del arte
 
-Evaluación adversarial multi-agente con búsqueda web en `docs/EVALUACION_SOTA.md`. Resumen: bajo LOSO honesto en ds004504 la literatura reporta ~71–83% acc; este trabajo (0.764/0.856) está por encima de la media LOSO y ~7 pts bajo el mejor comparable (DICE-net 83.28% LOSO), lejos de foundation models (LEAD ~91% F1). El valor del trabajo es la replicación leakage-free + el aporte metodológico (CWT-fair), no la accuracy. La novedad del control CWT-fair frente al linaje Falk/Cassani/Fraga se detalla en `docs/INFORME_TFM.md §5.7`.
+Posicionamiento vs literatura (con búsqueda web) en `docs/EVALUACION_SOTA.md`. Resumen: bajo LOSO honesto en ds004504 la literatura reporta ~71–83% acc; este trabajo (0.764/0.856) está por encima de la media LOSO y ~7 pts bajo el mejor comparable (DICE-net 83.28% LOSO), lejos de foundation models (LEAD ~91% F1). El valor del trabajo es la replicación leakage-free + el aporte metodológico (CWT-fair), no la accuracy. La novedad del control CWT-fair frente al linaje Falk/Cassani/Fraga se detalla en `docs/INFORME_TFM.md §5.7`.
 
 ---
 

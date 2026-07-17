@@ -10,7 +10,7 @@ Este proyecto es una **replicación académica de investigación** sobre el data
 
 ## 🤖 Uso de IA generativa
 
-La generación inicial de código, configuración del pipeline, debugging de leakage en LOSO-CV y auditoría metodológica fueron asistidos por **Claude Code (Anthropic, 2026)**. Todo el código fue revisado, ejecutado y validado por el autor antes del commit.
+La generación inicial de código, configuración del pipeline, debugging de leakage en LOSO-CV y revisión metodológica fueron asistidos por **Claude Code (Anthropic, 2026)**. Todo el código fue revisado, ejecutado y validado por el autor antes del commit.
 
 ## 📜 Licencia
 

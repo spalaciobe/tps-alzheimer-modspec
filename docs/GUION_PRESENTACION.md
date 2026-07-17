@@ -236,7 +236,7 @@ acercamiento a las tres decisiones de DSP clave."
 > no es un número, sino identificar el confound, diseñar el control, y
 > demostrar que la diferencia era un artefacto.
 >
-> Todo está en un repo público, con auditorías del código incluidas. Lo
+> Todo está en un repo público, con el informe y el código documentados. Lo
 > primero a futuro es igualar el eje 'hacia arriba' y ver si las
 > modulaciones rápidas de la CWT aportan algo.
 >
