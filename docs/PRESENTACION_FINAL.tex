@@ -150,6 +150,118 @@ todo se calcula \textbf{por fold}.
 \end{frame}
 
 % ============================================================
+% SLIDE 3a: Zoom DSP (1/3) — limpieza
+% ============================================================
+\begin{frame}{Zoom DSP (1/3) --- Limpieza: FIR 0.5--45 Hz + ICA}
+
+\begin{columns}[T]
+\begin{column}{0.46\textwidth}
+\small\textbf{Qué hago}
+\begin{itemize}
+    \item \textbf{FIR pasa-banda 0.5--45 Hz} (fase lineal).
+    \item \textbf{ICA + ICLabel} (+ wICA en residuos): separa y descarta
+    componentes \emph{no} cerebrales (ojo, músculo, línea, ECG).
+\end{itemize}
+\end{column}
+\begin{column}{0.52\textwidth}
+\small\textbf{Por qué (DSP)}
+\begin{itemize}
+    \item \textbf{0.5 Hz} (corte alto): quita deriva/DC y sudor, por
+    debajo del EEG útil --- conserva delta.
+    \item \textbf{45 Hz} (corte bajo): elimina línea (50/60 Hz) y EMG.
+    \item \textbf{FIR, no IIR}: \emph{fase lineal} $\Rightarrow$ no
+    distorsiona el \emph{tiempo} de la envolvente --- y esa envolvente es
+    justo lo que mide el espectro de modulación.
+    \item \textbf{ICLabel automático}: objetivo y reproducible en 65
+    sujetos.
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vfill
+\begin{alertblock}{Si no}
+\small Un parpadeo o el EMG son \textbf{transitorios de alta potencia}: sin
+quitarlos, el espectrograma podría confundirlos con un biomarcador.
+\end{alertblock}
+
+\end{frame}
+
+% ============================================================
+% SLIDE 3b: Zoom DSP (2/3) — acondicionamiento
+% ============================================================
+\begin{frame}{Zoom DSP (2/3) --- Acondicionamiento: 200 Hz y épocas de 8 s}
+
+\begin{columns}[T]
+\begin{column}{0.46\textwidth}
+\small\textbf{Qué hago}
+\begin{itemize}
+    \item \textbf{Remuestreo 500 $\to$ 200 Hz} (con anti-aliasing).
+    \item \textbf{Épocas de 8 s} con solape de 1 s.
+\end{itemize}
+\end{column}
+\begin{column}{0.52\textwidth}
+\small\textbf{Por qué (DSP)}
+\begin{itemize}
+    \item Tras filtrar a 45 Hz basta Nyquist $>90$ Hz: \textbf{200 Hz}
+    (Nyquist 100) sobra y evita aliasing, con 2.5$\times$ menos datos.
+    \item \textbf{8 s} $\Rightarrow$ resolución de modulación
+    $\Delta f_{\text{mod}} = 1/T = \mathbf{0.125}$ Hz: fina para las
+    modulaciones \textbf{lentas} ($<2$ Hz) relevantes en AD.
+    \item Solape 1 s $\Rightarrow$ más épocas (\emph{augmentation}).
+\end{itemize}
+\end{column}
+\end{columns}
+
+\vfill
+\begin{block}{El compromiso}
+\small Época \textbf{más corta} = peor resolución de modulación; \textbf{más
+larga} = se rompe la cuasi-estacionariedad del EEG. 8 s es el punto medio
+(y el del paper).
+\end{block}
+
+\end{frame}
+
+% ============================================================
+% SLIDE 3c: Zoom DSP (3/3) — representación T-F + modspec
+% ============================================================
+\begin{frame}{Zoom DSP (3/3) --- Representación T-F + espectro de modulación}
+
+\begin{columns}[T]
+\begin{column}{0.50\textwidth}
+\small\textbf{Qué hago}
+\begin{itemize}
+    \item \textbf{STFT \emph{o} CWT-Morlet} $\to X(t,f)$:
+    \begin{itemize}\scriptsize
+        \item STFT: ventana \emph{fija} $\Rightarrow \Delta t\cdot\Delta f$
+        constante.
+        \item CWT: ventana \emph{por escala} $\Rightarrow$ mejor $\Delta f$
+        en bajas frecuencias.
+    \end{itemize}
+    \item \textbf{Modspec}: $|X|^2 \to \mathcal{F}_t \to
+    M(f,f_{\text{mod}})$, redimensionado a \textbf{45$\times$45} (entrada
+    de la CNN).
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\small\textbf{Por qué (DSP)}
+\begin{itemize}
+    \item STFT vs CWT es \textbf{la variable en estudio} (hipótesis: CWT
+    mejor en bajas $\Rightarrow$ AD).
+    \item \textbf{45$\times$45}: tamaño de entrada fijo que exige la CNN
+    (fiel al paper).
+\end{itemize}
+\vspace{3pt}
+\begin{alertblock}{Sutileza (la retomo en ``el giro'')}
+\scriptsize Forzar ambos a 45$\times$45 \textbf{oculta} que el eje de
+modulación no mide lo mismo en STFT y CWT: ese es el \emph{confound} que
+controlo con CWT-fair.
+\end{alertblock}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% ============================================================
 % SLIDE 4: El titular
 % ============================================================
 \begin{frame}{El titular: la replicación funciona}

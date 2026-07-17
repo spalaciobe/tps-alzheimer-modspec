@@ -8,7 +8,9 @@ Sebastián Palacio Betancur · UNAL Medellín · TPS
 > arco narrativo es: *quise comparar STFT vs CWT → apareció una diferencia
 > confusa → descubrí que no comparaba peras con peras (el eje de modulación)
 > → lo controlé → las transformadas empatan; la diferencia era un artefacto
-> de DSP.* Total: ~5:00. El corazón son las **slides 5 y 6**.
+> de DSP.* Total: ~5:00 sin los *zooms*, o **~7:00** con los tres *zooms* de
+> DSP (slides 3a–3c), pensados para un público de señales; se pueden comprimir
+> o saltar si el tiempo aprieta. El corazón son las **slides 5 y 6**.
 
 ---
 
@@ -59,7 +61,52 @@ Sebastián Palacio Betancur · UNAL Medellín · TPS
 > por tres semillas. Y todo con **anti-leakage estricto**: cada cosa se
 > calcula dentro de cada fold."
 
-*Transición*: "¿Y qué salió?"
+*Transición*: "Antes de los resultados, y como es un curso de señales, un
+acercamiento a las tres decisiones de DSP clave."
+
+---
+
+## Slide 3a — Zoom DSP: limpieza (FIR + ICA) · (~40 s)
+
+**Idea**: por qué FIR de fase lineal y por qué ICA automático.
+
+> "Primero, **limpieza**. Filtro pasa-banda de 0.5 a 45 Hz. El 0.5 quita la
+> deriva lenta y el DC; el 45 corta la línea eléctrica y el músculo. Y —esto
+> importa— uso un **FIR de fase lineal**: no quiero que el filtro distorsione
+> el *tiempo*, porque justo después voy a medir *cómo cambia la energía en el
+> tiempo*. Luego, **ICA con etiquetado automático (ICLabel)** para quitar
+> ojos, músculo y línea. Si no lo hiciera, un parpadeo es un pico de potencia
+> que el espectrograma podría confundir con un biomarcador."
+
+---
+
+## Slide 3b — Zoom DSP: acondicionamiento (200 Hz + 8 s) · (~35 s)
+
+**Idea**: por qué 200 Hz (aliasing) y por qué 8 s (resolución de modulación).
+
+> "Segundo, **acondicionamiento**. Bajo a **200 Hz**: como ya filtré a 45,
+> con un Nyquist de 100 sobra y evito aliasing, con menos datos. Y corto en
+> **épocas de 8 segundos**. El 8 no es arbitrario: la resolución del eje de
+> modulación es 1 sobre la duración, o sea **0.125 Hz** —fina para las
+> modulaciones lentas, por debajo de 2 Hz, que son las que importan en
+> Alzheimer—. Más corto perdería esa resolución; más largo rompería la
+> estacionariedad del EEG."
+
+---
+
+## Slide 3c — Zoom DSP: representación T-F + modspec · (~40 s)
+
+**Idea**: STFT vs CWT es la variable en estudio; y siembra la sutileza del eje.
+
+> "Y tercero, la **representación**, el corazón del proyecto. Descompongo con
+> STFT o con CWT: la STFT usa una **ventana fija**; la wavelet **ajusta la
+> ventana por escala**, dando mejor resolución en bajas frecuencias —de ahí
+> mi hipótesis—. De ahí saco el espectro de modulación y lo llevo a una
+> imagen de **45×45** para la CNN. Y dejo sembrada una sutileza: forzar las
+> dos a 45×45 **oculta que su eje vertical no mide lo mismo**. Justo eso es
+> lo que voy a destapar en un momento."
+
+*Transición*: "Con eso montado, ¿qué salió?"
 
 ---
 
@@ -186,7 +233,8 @@ Sebastián Palacio Betancur · UNAL Medellín · TPS
 
 ## Notas de entrega
 
-- **Ritmo**: el guion tiene ~760 palabras. A 110–120 palabras/min son ~6:00–6:30; para ceñirte a 5:00 habla a ~150 wpm (ágil) **o** recorta ~150 palabras afinando slides 5–6. Elige una opción y ensaya con cronómetro.
+- **Ritmo**: el guion base (sin zooms) tiene ~760 palabras. A 110–120 palabras/min son ~6:00–6:30; para ceñirte a 5:00 habla a ~150 wpm (ágil) **o** recorta ~150 palabras afinando slides 5–6. Elige una opción y ensaya con cronómetro.
+- **Zooms de DSP (3a–3c)**: suman ~2:00. Son para el público de señales de la materia. Si el tiempo aprieta, compríme a un solo *zoom* de ~40 s ("filtro FIR de fase lineal, 200 Hz por aliasing, 8 s por resolución de modulación") o sáltalos; el arco no depende de ellos.
 - **Dónde respirar**: las transiciones en *cursiva* son pausas — úsalas.
 - **Slides que no puedes saltar**: la 5 (el confound + CWT-fair) y la 6 (la
   convergencia). Son el argumento central.
