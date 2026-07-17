@@ -77,7 +77,7 @@ acercamiento a las tres decisiones de DSP clave."
 
 ---
 
-## Slide 3a — Zoom DSP: limpieza (FIR + ICA) · (~55 s)
+## Slide 3a — Zoom DSP: limpieza (FIR + ICA) · (~45 s)
 
 **Idea**: por qué FIR de fase lineal, qué es ICA y por qué el etiquetado automático.
 
@@ -85,16 +85,13 @@ acercamiento a las tres decisiones de DSP clave."
 > deriva lenta y el DC; el 45 corta la línea eléctrica y el músculo. Y —esto
 > importa— uso un **FIR de fase lineal**: no quiero que el filtro distorsione
 > el *tiempo*, porque justo después voy a medir *cómo cambia la energía en el
-> tiempo*. Luego aplico **ICA** —Análisis de Componentes Independientes—:
-> una técnica que, a partir de la mezcla que capta cada electrodo, separa
-> las **fuentes independientes** que la componen. La idea es como separar
-> las voces en una fiesta escuchando solo los micrófonos: cada electrodo oye
-> un poco de todo, e ICA reconstruye las señales originales. Así el parpadeo,
-> el músculo o la línea eléctrica salen como **componentes propias**, y un
-> clasificador automático, **ICLabel**, marca cuáles no son cerebrales para
-> descartarlas —objetivo y reproducible en los 65 sujetos—. Si no lo
-> hiciera, un parpadeo es un pico de potencia que el espectrograma podría
-> confundir con un biomarcador."
+> tiempo*. Luego aplico **ICA** (Análisis de Componentes Independientes):
+> separa la mezcla que capta cada electrodo en sus **fuentes
+> independientes** —como aislar cada voz en una fiesta—, y así el parpadeo,
+> el músculo o la línea salen como componentes propias; un clasificador
+> automático, **ICLabel**, marca las no cerebrales para descartarlas. Si no,
+> un parpadeo es un pico de potencia que el espectrograma podría confundir
+> con un biomarcador."
 
 ---
 
@@ -287,7 +284,7 @@ acercamiento a las tres decisiones de DSP clave."
 ## Notas de entrega
 
 - **Ritmo y duración**: el discurso completo son ~1290 palabras. A ritmo **pausado** (~110 wpm) son ~11:45 de lectura pura, o **~13:30 en vivo** (con pausas al cambiar de slide, señalar figuras y respirar). El núcleo narrativo (sin 3a–3e) son ~830 palabras: ~7:30 pausado, ~5:00 ágil. Ensaya con cronómetro y decide qué versión usas.
-- **Zooms de DSP (3a–3c)**: suman ~2:10. Son para el público de señales de la materia. Si el tiempo aprieta, compríme a un solo *zoom* de ~40 s ("filtro FIR de fase lineal, 200 Hz por aliasing, 8 s por resolución de modulación") o sáltalos; el arco no depende de ellos.
+- **Zooms de DSP (3a–3c)**: suman ~2:00. Son para el público de señales de la materia. Si el tiempo aprieta, compríme a un solo *zoom* de ~40 s ("filtro FIR de fase lineal, 200 Hz por aliasing, 8 s por resolución de modulación") o sáltalos; el arco no depende de ellos.
 - **Ejemplos de gráficas (3d–3e)**: suman ~1:25. La 3d (espectro de modulación) es la más valiosa para un curso de señales —muestra la entrada real y el biomarcador—; consérvala si puedes. La 3e (saliencia) es opcional: si vas justo, resúmela en una frase ("la CNN resalta las regiones que separan AD de sanos y el SVM las usa") apoyándote en el diagrama de la slide 3.
 - **Dónde respirar**: las transiciones en *cursiva* son pausas — úsalas.
 - **Slides que no puedes saltar**: la 5 (el confound + CWT-fair) y la 6 (la
