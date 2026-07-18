@@ -8,10 +8,6 @@ Este proyecto es una **replicación académica de investigación** sobre el data
 
 **No están aprobados para uso clínico directo. No realizan diagnósticos médicos válidos.** Cualquier aplicación clínica requiere validación en cohortes externas, aprobación regulatoria (FDA/EMA/INVIMA), consentimiento informado y supervisión médica cualificada.
 
-## 🤖 Uso de IA generativa
-
-La generación inicial de código, configuración del pipeline, debugging de leakage en LOSO-CV y revisión metodológica fueron asistidos por **Claude Code (Anthropic, 2026)**. Todo el código fue revisado, ejecutado y validado por el autor antes del commit.
-
 ## 📜 Licencia
 
 Código bajo **MIT License** (ver [`LICENSE`](LICENSE)). Dataset OpenNeuro ds004504 bajo **CC0 1.0 Universal**.

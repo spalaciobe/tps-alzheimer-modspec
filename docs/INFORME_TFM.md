@@ -561,11 +561,7 @@ Tiempos en RTX 3050 Laptop (4 GB):
 
 ---
 
-## 8. Declaración de uso de IA
-
-La estructura del pipeline, scripts de orquestación, debugging de leakage en LOSO-CV, refactor de optimización (`SubjectBank`, fp16-bank, GC entre folds), revisión metodológica y redacción de este informe fueron asistidos por **Claude Code (Anthropic)** [Opus 4.7, 2026]. Todo el código fue revisado, ejecutado y validado por el autor antes de cada commit.
-
-## 9. Bibliografía
+## 8. Bibliografía
 
 1. **Lopes, M., Cassani, R., Falk, T.H.** (2023). Using CNN saliency maps and EEG modulation spectra for improved and more interpretable machine learning-based Alzheimer's disease diagnosis. *Computational Intelligence and Neuroscience* **2023**, art. 3198066. DOI: 10.1155/2023/3198066. Open access vía Wiley/Hindawi. [Nota: en versiones previas de este informe se citó erróneamente como IEEE TNSRE 31:1310–1319; corregido tras verificación contra el PDF (DOI confirma Hindawi/Wiley CIN).]
 2. **Miltiadous, A. et al.** (2023). A dataset of scalp EEG recordings of Alzheimer's disease, frontotemporal dementia and healthy subjects from routine EEG. *OpenNeuro ds004504* (CC0 1.0).
@@ -577,7 +573,7 @@ La estructura del pipeline, scripts de orquestación, debugging de leakage en LO
 8. **Pion-Tonachini, L., Kreutz-Delgado, K., Makeig, S.** (2019). ICLabel: An automated electroencephalographic independent component classifier. *NeuroImage* **198**, 181–197.
 9. **Gramfort, A. et al.** (2013). MEG and EEG data analysis with MNE-Python. *Frontiers in Neuroscience* **7**, 267.
 
-## 10. Anexos
+## 9. Anexos
 
 ### A. Figuras finales
 
