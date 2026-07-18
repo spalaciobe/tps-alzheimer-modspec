@@ -253,7 +253,7 @@ larga} = se rompe la cuasi-estacionariedad del EEG. 8 s es el punto medio
     (fiel al paper).
 \end{itemize}
 \vspace{3pt}
-\begin{alertblock}{Sutileza (la retomo en ``el giro'')}
+\begin{alertblock}{Sutileza }
 \scriptsize Forzar ambos a 45$\times$45 \textbf{oculta} que el eje de
 modulación no mide lo mismo en STFT y CWT: ese es el \emph{confound} que
 controlo con CWT-fair.
@@ -396,6 +396,34 @@ la STFT}.
     \item \textbf{CWT nativa vs CWT-fair} $\Rightarrow$ mide el efecto
     del \emph{eje} (el artefacto).
 \end{itemize}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+% ============================================================
+% SLIDE 5b: El giro en imágenes (el cono desaparece)
+% ============================================================
+\begin{frame}{El giro, en imágenes: al igualar el eje, el ``cono'' desaparece}
+
+\centering
+\includegraphics[width=0.98\linewidth]{figures_informe_final/fair_modspec_cone.png}\\[4pt]
+
+\begin{columns}[T]
+\begin{column}{0.62\textwidth}
+\scriptsize
+Eje horizontal = frecuencia de \textbf{modulación}. La \textbf{STFT}
+concentra la energía cerca de 0; la \textbf{CWT nativa} tiene el ``cono''
+que la extiende hasta modulaciones altas (contenido que la STFT ni siquiera
+mide); la \textbf{CWT-fair}, al diezmar la envolvente, \textbf{pierde el
+cono} y su estructura de modulación se acerca a la de STFT.
+\end{column}
+\begin{column}{0.36\textwidth}
+\scriptsize
+\textbf{Ojo (honestidad)}: esto iguala el eje de \emph{modulación}
+(horizontal). El de \emph{portadora} (vertical) sigue siendo el de cada
+transformada --- por eso convergen las \emph{métricas}, no los mapas de
+saliency.
 \end{column}
 \end{columns}
 

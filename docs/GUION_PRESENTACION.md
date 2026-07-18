@@ -2,20 +2,6 @@
 
 **TFM: ¿Importa cómo descomponemos el EEG para detectar Alzheimer?**
 Sebastián Palacio Betancur · UNAL Medellín · TPS
-
-> **Cómo usar este guion**: cada slide tiene su tiempo objetivo, la idea
-> que debe quedar, y un texto sugerido (léelo natural, no de memoria). El
-> arco narrativo es: *quise comparar STFT vs CWT → apareció una diferencia
-> confusa → descubrí que no comparaba peras con peras (el eje de modulación)
-> → lo controlé → las transformadas empatan; la diferencia era un artefacto
-> de DSP.* Dos versiones según tu tiempo:
-> **(1) Núcleo narrativo** (slides 1–3, 4–7, sin los zooms 3a–3c ni los
-> ejemplos 3d–3e): ~5:00 a ritmo ágil, ~8:00 pausado.
-> **(2) Versión completa** (con los 3 *zooms* de DSP y los 2 ejemplos de
-> gráficas): **~11–13 min a ritmo pausado**, ideal para un público de
-> señales o una defensa de ~15 min. El corazón sigue siendo las **slides 5
-> y 6**; los zooms/ejemplos son profundidad que puedes comprimir o saltar.
-
 ---
 
 ## Slide 1 — Título · (0:00–0:15) · 15 s
@@ -200,7 +186,26 @@ acercamiento a las tres decisiones de DSP clave."
 > comparar la CWT nativa contra CWT-fair mide el efecto del **eje** —o sea,
 > el artefacto—."
 
-*Transición*: "¿Y qué pasó al igualar el eje?"
+*Transición*: "Y al igualar el eje, ¿qué le pasa a las imágenes?"
+
+---
+
+## Slide 5b — El giro en imágenes: el cono desaparece · (~30 s)
+
+**Idea**: mostrar visualmente que CWT-fair iguala el eje de modulación (con el matiz honesto).
+
+> "Y esto se ve. Miren el eje horizontal, el de modulación. La **STFT**
+> concentra casi todo cerca de cero. La **CWT nativa** tiene ese *cono* que
+> estira energía hasta modulaciones altas —contenido que la STFT ni siquiera
+> mide—. Y la **CWT-fair**: al diezmar la envolvente, **el cono desaparece** y
+> su estructura de modulación se vuelve como la de la STFT. Eso es,
+> literalmente, igualar el eje.
+>
+> Un matiz honesto: esto iguala el eje de *modulación* —el horizontal—; el de
+> *portadora* sigue siendo el de cada transformada. Por eso convergen las
+> métricas, no los mapas de saliencia."
+
+*Transición*: "¿Y en números?"
 
 ---
 
@@ -283,7 +288,8 @@ acercamiento a las tres decisiones de DSP clave."
 
 ## Notas de entrega
 
-- **Ritmo y duración**: el discurso completo son ~1290 palabras. A ritmo **pausado** (~110 wpm) son ~11:45 de lectura pura, o **~13:30 en vivo** (con pausas al cambiar de slide, señalar figuras y respirar). El núcleo narrativo (sin 3a–3e) son ~830 palabras: ~7:30 pausado, ~5:00 ágil. Ensaya con cronómetro y decide qué versión usas.
+- **Ritmo y duración**: el discurso completo son ~1435 palabras. A ritmo **pausado** (~110 wpm) son ~13:00 de lectura pura, o **~15:00 en vivo** (con pausas al cambiar de slide, señalar figuras y respirar). El núcleo narrativo (sin 3a–3e ni 5b) son ~830 palabras: ~7:30 pausado, ~5:00 ágil. Ensaya con cronómetro y decide qué versión usas.
+- **Imagen del giro (5b)**: ~30 s. Refuerza visualmente que CWT-fair iguala el eje de modulación (el "cono" desaparece). Honesta y valiosa para señales; si vas justo, se puede saltar apoyándose en el forest plot de la slide 6.
 - **Zooms de DSP (3a–3c)**: suman ~2:00. Son para el público de señales de la materia. Si el tiempo aprieta, compríme a un solo *zoom* de ~40 s ("filtro FIR de fase lineal, 200 Hz por aliasing, 8 s por resolución de modulación") o sáltalos; el arco no depende de ellos.
 - **Ejemplos de gráficas (3d–3e)**: suman ~1:25. La 3d (espectro de modulación) es la más valiosa para un curso de señales —muestra la entrada real y el biomarcador—; consérvala si puedes. La 3e (saliencia) es opcional: si vas justo, resúmela en una frase ("la CNN resalta las regiones que separan AD de sanos y el SVM las usa") apoyándote en el diagrama de la slide 3.
 - **Dónde respirar**: las transiciones en *cursiva* son pausas — úsalas.
