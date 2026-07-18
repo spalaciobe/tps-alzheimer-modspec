@@ -346,8 +346,8 @@ $|\partial y/\partial x|$---; se promedia por clase
 selección de patches usa un barrido de threshold $\in\{80,82,\dots,96\}$\%
 y $K\in\{3,4,5\}$ (KMeans). La implementación efectiva maximiza la
 separabilidad de la saliency map (máx.\ contraste AD vs HC sobre píxeles
-candidatos), no una validación nested con SVM en val set; se discute como
-limitación (§\ref{sec:limitaciones}).
+candidatos), no una validación nested con SVM en val set (véase
+§\ref{sec:limitaciones}).
 
 \textbf{SVM con patches saliency-guided.} Por epoch y canal, la feature es
 la potencia media en cada patch más los ratios de potencia entre patches
@@ -391,8 +391,8 @@ CWT nativa & $0.677 \pm 0.081$ & $0.670 \pm 0.085$ & $0.778 \pm 0.038$ \\
 \end{table}
 
 Frente al paper, la comparación es orientativa (difieren datasets,
-poblaciones y detalles de anti-leakage), pero sitúa el resultado en el
-mismo orden de magnitud sobre datos públicos:
+poblaciones y detalles de anti-leakage), pero sitúa el resultado en un
+rango comparable sobre datos públicos:
 
 \begin{table}[H]
 \centering
@@ -407,7 +407,7 @@ F1       & $0.61 \pm 0.02$ & $\mathbf{0.760 \pm 0.008}$ \\
 AUC      & no reportado    & $\mathbf{0.856 \pm 0.022}$ \\
 \bottomrule
 \end{tabular}
-\caption{Comparación con el paper original (orientativa, no estricta).}
+\caption{Comparación con el paper original.}
 \end{table}
 
 En síntesis, \textbf{el pipeline funciona en el mismo orden de magnitud
@@ -481,8 +481,7 @@ STFT vs CWT \textbf{nativa} (confundida) & $+0.028, +0.105, +0.101$ & $\mathbf{0
 CWT nativa vs CWT-fair (efecto eje) & $-0.049, -0.069, -0.032$ & $\mathbf{0.283}$ & NS: el eje explica el grueso \\
 \bottomrule
 \end{tabular}
-\caption{DeLong por seed + Stouffer (SVM vainilla). La ventaja marginal
-STFT vs CWT nativa ($p=0.061$) se disuelve a $p=0.318$ al igualar el eje.}
+\caption{DeLong por seed + Stouffer (SVM vainilla).}
 \label{tab:delong}
 \end{table}
 
@@ -520,8 +519,8 @@ comparación confundida: solo la semilla $s_1$ da $p=0.025$ ($s_0=0.893$,
 $s_2=0.338$), y esa señal se pierde tras corrección Bonferroni intra-seed
 ($\alpha=0.0167$). En conjunto ---tres pipelines, DeLong~+~Stouffer,
 BH-FDR y Wilcoxon--- \textbf{a igualdad de eje de modulación no hay
-evidencia de superioridad de ninguna transformada} (potencia limitada,
-3~seeds). Las Figuras~\ref{fig:fair_grouped}--\ref{fig:auc_master} resumen
+evidencia de superioridad de ninguna transformada}. Las
+Figuras~\ref{fig:fair_grouped}--\ref{fig:auc_master} resumen
 visualmente la convergencia.
 
 \begin{figure}[H]
@@ -825,10 +824,10 @@ de este trabajo no es la carrera de accuracy, sino la replicación
 \begin{enumerate}[leftmargin=*]
     \item \textbf{Solo 3 seeds}: se cuantifica la varianza, pero el número
     de réplicas es bajo para inferencias fuertes; idealmente $\geq10$.
-    \item \textbf{CWT-fair iguala ``hacia abajo''} el eje de modulación
-    (§\ref{sec:signal_tf}): es la definición conservadora, no única; igualar
-    ``hacia arriba'' (STFT de hop fino) queda como trabajo futuro. Por eso
-    la conclusión es ``a igualdad de eje de modulación \emph{lento}''.
+    \item \textbf{CWT-fair iguala ``hacia abajo''} el eje
+    (§\ref{sec:signal_tf}): igualar ``hacia arriba'' (STFT de hop fino) queda
+    como trabajo futuro, y por eso la conclusión es ``a igualdad de eje de
+    modulación \emph{lento}''.
     \item \textbf{Grid search de patches heurístico}, no nested CV
     (selección por separabilidad de saliency map).
     \item \textbf{BH-FDR post-hoc}, no pre-registrada (ninguna comparación
@@ -860,9 +859,8 @@ de modulación exige \textbf{igualar el eje de modulación}, porque las
 diferencias de resolución temporal nativa crean un confound que puede
 invertir el ranking aparente. Con el control CWT-fair, STFT y CWT-Morlet
 resultan indistinguibles en las tres arquitecturas y ninguna comparación
-justa sobrevive BH-FDR (§\ref{sec:sintesis_confound}); es, eso sí,
-\emph{ausencia de diferencia detectable} y no equivalencia probada
-(§\ref{sec:fusion_tost}). La sensibilidad del ranking al método de saliency
+justa sobrevive BH-FDR (§\ref{sec:sintesis_confound}); es, eso sí, una
+\emph{ausencia de diferencia detectable} (§\ref{sec:fusion_tost}). La sensibilidad del ranking al método de saliency
 era, en parte, el mismo confound (§\ref{sec:sal_ranking}), y los patches
 descubiertos ---aunque coherentes con biomarcadores clásicos de EA en
 $\alpha+\theta$ y canales occipito-temporales--- son inestables entre folds.

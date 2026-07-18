@@ -117,7 +117,7 @@ Esta asimetría es la raíz del confound que vertebra el trabajo. Las imágenes 
 
 Entrenamiento: optimizador NAdam (lr = 10⁻⁴, weight_decay = 10⁻², el L2 del paper), batch 128 (el paper usa 4; resultados estables), 50 épocas con *early stopping* (paciencia 10 sobre F1 macro de validación), precisión mixta (AMP) y class weights balanceados.
 
-**Saliency por fold (anti-leakage estricto).** En cada fold del LOSO, sobre un subconjunto estratificado de 20 sujetos de train, se calcula **Grad-CAM** (Selvaraju et al., 2017) sobre la última conv o bien **saliency vainilla** (Simonyan et al., 2014) —paper-faithful, |∂y/∂x|—; se promedia por clase (`saliency_AD`, `saliency_HC`) y se toma su diferencia. La selección de patches usa un barrido de threshold ∈ {80, 82, …, 96}% y K ∈ {3, 4, 5} (KMeans). La implementación efectiva maximiza la separabilidad de la saliency map (máx. contraste AD vs HC sobre píxeles candidatos), no una validación nested con SVM en val set; se discute como limitación (§5.5).
+**Saliency por fold (anti-leakage estricto).** En cada fold del LOSO, sobre un subconjunto estratificado de 20 sujetos de train, se calcula **Grad-CAM** (Selvaraju et al., 2017) sobre la última conv o bien **saliency vainilla** (Simonyan et al., 2014) —paper-faithful, |∂y/∂x|—; se promedia por clase (`saliency_AD`, `saliency_HC`) y se toma su diferencia. La selección de patches usa un barrido de threshold ∈ {80, 82, …, 96}% y K ∈ {3, 4, 5} (KMeans). La implementación efectiva maximiza la separabilidad de la saliency map (máx. contraste AD vs HC sobre píxeles candidatos), no una validación nested con SVM en val set (véase §5.5).
 
 **SVM con patches saliency-guided.** Por epoch y canal, la feature es la potencia media en cada patch más los ratios de potencia entre patches del mismo canal; selección ANOVA F-value top-24 sobre train, MinMaxScaler a [-1, 1], y SVM RBF con γ = 1/24, C = 1, sin tuning (alineado con Lopes).
 
@@ -141,7 +141,7 @@ La configuración fiel al paper —SVM con saliency vainilla sobre STFT— es la
 
 *Tabla 4. SVM saliency vainilla (paper-faithful), multi-seed. Mejor AUC: STFT.*
 
-Frente al paper, la comparación es orientativa (difieren datasets, poblaciones y detalles de anti-leakage), pero sitúa el resultado en el mismo orden de magnitud sobre datos públicos:
+Frente al paper, la comparación es orientativa (difieren datasets, poblaciones y detalles de anti-leakage), pero sitúa el resultado en un rango comparable sobre datos públicos:
 
 | Métrica | Lopes (T2: N vs AD, LOSO) | Este TFM (SVM vainilla STFT) |
 |---|---|---|
@@ -150,7 +150,7 @@ Frente al paper, la comparación es orientativa (difieren datasets, poblaciones 
 | F1 | 0.61 ± 0.02 | **0.760 ± 0.008** |
 | AUC | no reportado | **0.856 ± 0.022** |
 
-*Tabla 5. Comparación con el paper original (orientativa, no estricta).*
+*Tabla 5. Comparación con el paper original.*
 
 En síntesis, **el pipeline funciona en el mismo orden de magnitud sobre datos públicos independientes**, que es el objetivo de un estudio de replicación; agregar las 3 semillas por votación de mediana eleva el desempeño a Acc 0.831 / AUC 0.900 (curva ROC agregada en la Figura 1).
 
@@ -184,7 +184,7 @@ La inferencia usa DeLong AUC pareado *dentro de cada seed* (n = 65), combinado e
 | **STFT vs CWT-fair** (justa) | -0.021, +0.036, +0.069 | **0.318** | NS a igualdad de eje |
 | CWT nativa vs CWT-fair (efecto eje) | -0.049, -0.069, -0.032 | **0.283** | NS: el eje explica el grueso |
 
-*Tabla 7. DeLong por seed + Stouffer (SVM vainilla). La ventaja marginal STFT vs CWT nativa (p = 0.061) se disuelve a p = 0.318 al igualar el eje.*
+*Tabla 7. DeLong por seed + Stouffer (SVM vainilla).*
 
 La ventaja marginal de STFT sobre la CWT nativa (p = 0.061) se disuelve a p = 0.318 al pasar a la comparación justa: ese p ≈ 0.06 estaba impulsado por el artefacto, no por la transformada. Con Grad-CAM ocurre lo mismo: la comparación confundida STFT vs CWT nativa era marginal (p = 0.068) y las justas no significativas (STFT vs CWT-fair p = 0.587; nativa vs fair p = 0.527). Bajo corrección Benjamini-Hochberg (α = 0.05, familia de m = 3: CNN, SVM Grad-CAM, SVM vainilla) ninguna comparación justa se acerca a la significancia:
 
@@ -196,7 +196,7 @@ La ventaja marginal de STFT sobre la CWT nativa (p = 0.061) se disuelve a p = 0.
 
 *Tabla 8. Corrección por comparaciones múltiples (BH-FDR).*
 
-Un test de Wilcoxon pareado de scores por sujeto (SVM vainilla, STFT vs CWT nativa) corrobora la falta de un efecto consistente incluso en la comparación confundida: solo la semilla s1 da p = 0.025 (s0 = 0.893, s2 = 0.338), y esa señal se pierde tras corrección Bonferroni intra-seed (α = 0.0167). En conjunto —tres pipelines, DeLong + Stouffer, BH-FDR y Wilcoxon— **a igualdad de eje de modulación no hay evidencia de superioridad de ninguna transformada** (potencia limitada, 3 seeds). Las Figuras 2–5 resumen visualmente la convergencia.
+Un test de Wilcoxon pareado de scores por sujeto (SVM vainilla, STFT vs CWT nativa) corrobora la falta de un efecto consistente incluso en la comparación confundida: solo la semilla s1 da p = 0.025 (s0 = 0.893, s2 = 0.338), y esa señal se pierde tras corrección Bonferroni intra-seed (α = 0.0167). En conjunto —tres pipelines, DeLong + Stouffer, BH-FDR y Wilcoxon— **a igualdad de eje de modulación no hay evidencia de superioridad de ninguna transformada**. Las Figuras 2–5 resumen visualmente la convergencia.
 
 ![AUC por pipeline y transformada](figures_informe_final/fair_auc_grouped.png)
 
@@ -321,7 +321,7 @@ Frente al SOTA de *desempeño*: en `ds004504` bajo validación honesta sujeto-in
 ### 5.5 Limitaciones
 
 1. **Solo 3 seeds**: se cuantifica la varianza, pero el número de réplicas es bajo para inferencias fuertes; idealmente ≥10.
-2. **CWT-fair iguala "hacia abajo"** el eje de modulación (§3.1): es la definición conservadora, no única; igualar "hacia arriba" (STFT de hop fino) queda como trabajo futuro. Por eso la conclusión es "a igualdad de eje de modulación *lento*".
+2. **CWT-fair iguala "hacia abajo"** el eje (§3.1): igualar "hacia arriba" (STFT de hop fino) queda como trabajo futuro, y por eso la conclusión es "a igualdad de eje de modulación *lento*".
 3. **Grid search de patches heurístico**, no nested CV (selección por separabilidad de saliency map).
 4. **BH-FDR post-hoc**, no pre-registrada (ninguna comparación justa se acerca a la significancia igualmente).
 5. **CWT subexplorada**: solo `cmor1.5-1.0`, 32 escalas log, sin cone-of-influence ni tuning; los hiperparámetros del CNN fueron optimizados por Lopes para input STFT, y la CNN queda sub-entrenada (dropout 0.85).
@@ -333,7 +333,7 @@ Frente al SOTA de *desempeño*: en `ds004504` bajo validación honesta sujeto-in
 
 ## 6. Conclusiones
 
-El pipeline de Lopes et al. (2023) se replica funcionalmente sobre datos públicos (SVM vainilla + STFT: Acc 0.764, AUC 0.856, §4.1). Su hallazgo central, sin embargo, es metodológico: comparar representaciones tiempo-frecuencia para el espectro de modulación exige **igualar el eje de modulación**, porque las diferencias de resolución temporal nativa crean un confound que puede invertir el ranking aparente. Con el control CWT-fair, STFT y CWT-Morlet resultan indistinguibles en las tres arquitecturas y ninguna comparación justa sobrevive BH-FDR (§4.2); es, eso sí, *ausencia de diferencia detectable* y no equivalencia probada (§4.4). La sensibilidad del ranking al método de saliency era, en parte, el mismo confound (§5.2), y los patches descubiertos —aunque coherentes con biomarcadores clásicos de EA en α + θ y canales occipito-temporales— son inestables entre folds. El valor del trabajo no es un número de accuracy sino el rigor comparativo: un diagnóstico, un control replicable y un resultado nulo informativo (§5.4). Las líneas futuras más directas son igualar el eje "hacia arriba" (para ver si las modulaciones rápidas que CWT-fair descarta aportan algo), confirmar la complementariedad del late-fusion con ≥10 seeds y un test formal, y validar en un dataset EEG-AD externo.
+El pipeline de Lopes et al. (2023) se replica funcionalmente sobre datos públicos (SVM vainilla + STFT: Acc 0.764, AUC 0.856, §4.1). Su hallazgo central, sin embargo, es metodológico: comparar representaciones tiempo-frecuencia para el espectro de modulación exige **igualar el eje de modulación**, porque las diferencias de resolución temporal nativa crean un confound que puede invertir el ranking aparente. Con el control CWT-fair, STFT y CWT-Morlet resultan indistinguibles en las tres arquitecturas y ninguna comparación justa sobrevive BH-FDR (§4.2); es, eso sí, una *ausencia de diferencia detectable* (§4.4). La sensibilidad del ranking al método de saliency era, en parte, el mismo confound (§5.2), y los patches descubiertos —aunque coherentes con biomarcadores clásicos de EA en α + θ y canales occipito-temporales— son inestables entre folds. El valor del trabajo no es un número de accuracy sino el rigor comparativo: un diagnóstico, un control replicable y un resultado nulo informativo (§5.4). Las líneas futuras más directas son igualar el eje "hacia arriba" (para ver si las modulaciones rápidas que CWT-fair descarta aportan algo), confirmar la complementariedad del late-fusion con ≥10 seeds y un test formal, y validar en un dataset EEG-AD externo.
 
 ---
 
