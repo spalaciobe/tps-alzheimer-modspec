@@ -917,7 +917,23 @@ transformada.
     del eje de modulación (Nyquist $1.56$~Hz vs $100$~Hz).}
 \end{figure}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.98\linewidth]{figures_informe_final/fair_modspec_cone.png}
+    \caption{Espectro de modulación medio bajo las tres condiciones
+    (STFT $\mid$ CWT nativa $\mid$ CWT-fair). Al igualar el eje de
+    modulación, la \textbf{CWT-fair pierde el ``cono''} de la wavelet
+    --- visible en la CWT nativa como energía que se extiende hasta
+    modulaciones altas --- y su estructura de modulación se acerca a la
+    de la STFT: evidencia visual del control DSP. \emph{Nota honesta}:
+    esto iguala el eje de modulación (horizontal), \emph{no} el de
+    portadora (vertical); por eso convergen las métricas (§\ref{sec:delong_per_seed})
+    pero \emph{no} necesariamente los mapas de saliency (§\ref{sec:sal_ranking}).}
+    \label{fig:fair_cone}
+\end{figure}
+
 \subsection{El método de saliency cambia el ranking aparente --- pero también vía el confound}
+\label{sec:sal_ranking}
 
 \textbf{Hallazgo metodológico}: con la CWT \textbf{nativa}, el ranking se
 invierte según el método de saliency (Grad-CAM: CWT$>$STFT; vainilla:

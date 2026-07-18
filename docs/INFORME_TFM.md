@@ -400,6 +400,10 @@ La fusión da una **mejora leve** sobre STFT (+0.011 AUC medio) y **menor varian
 
 **Lectura defendible**: *bajo un eje de modulación equiparable, la elección STFT vs CWT-Morlet no cambia el poder discriminativo de este pipeline*. Esto es más fuerte y más honesto que el resultado ingenuo, porque atribuye correctamente las diferencias observadas a su causa (DSP), no a la transformada.
 
+![Espectro de modulación medio: STFT, CWT nativa y CWT-fair](figures_informe_final/fair_modspec_cone.png)
+
+*Figura: espectro de modulación medio bajo las tres condiciones (STFT | CWT nativa | CWT-fair). Al igualar el eje de modulación, la **CWT-fair pierde el "cono"** de la wavelet —visible en la CWT nativa como energía extendida hasta modulaciones altas— y su estructura de modulación se acerca a la de STFT: evidencia visual del control DSP. Nota honesta: esto iguala el eje de modulación (horizontal), **no** el de portadora (vertical); por eso convergen las métricas (§4.3) pero no necesariamente los mapas de saliency (§5.2).*
+
 ### 5.2 El método de saliency cambia el ranking aparente — pero también vía el confound
 
 **Hallazgo metodológico**: con la CWT **nativa**, el ranking se invierte según el método de saliency (Grad-CAM: CWT>STFT; vainilla: STFT>CWT). Pero esta sensibilidad **se atenúa con CWT-fair**: al quitar el confound del eje, las dos representaciones convergen bajo *ambos* métodos de saliency. Parte de la "dependencia del método de saliency" era, otra vez, el eje de modulación interactuando con cómo cada método pondera las regiones. Los saliency maps de STFT y CWT nativa están **débilmente correlacionados, cerca de cero** (Pearson r ≈ −0.09 vainilla, −0.24 Grad-CAM, promedio de 3 seeds; con n=3 no se puede afirmar independencia), lo que sigue indicando que descubren regiones distintas — pero eso ya no se traduce en una diferencia de desempeño una vez igualado el eje.
