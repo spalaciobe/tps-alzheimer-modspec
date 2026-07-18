@@ -216,7 +216,7 @@ Un test de Wilcoxon pareado de scores por sujeto (SVM vainilla, STFT vs CWT nati
 
 ### 4.3 Análisis exploratorio (post-hoc)
 
-Los análisis de esta subsección no estaban pre-registrados y deben leerse como exploratorios. **Correlación 2D entre saliency maps** (Pearson r, media ± SD sobre 3 seeds):
+**Correlación 2D entre saliency maps** (Pearson r, media ± SD sobre 3 seeds):
 
 | Comparación | Pearson r |
 |---|---|
